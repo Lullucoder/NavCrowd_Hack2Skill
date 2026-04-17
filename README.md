@@ -24,13 +24,55 @@ The platform now features a modern, polished interface with:
 - Floating particle effects on landing page
 - Smooth page transitions and hover effects
 
-## 5. What Is Implemented
+## 5. ML-Powered Venue Blueprint System (NEW)
+VenueFlow now includes an advanced venue mapping and navigation system:
+
+### Interactive Venue Blueprint
+- Full 2D venue map with 18+ defined areas (gates, concourses, seating, food courts, restrooms, parking, emergency exits)
+- Real-time crowd heatmap overlay with color-coded density levels
+- Click-to-select areas for detailed occupancy information
+- Polygon-based area definitions for accurate spatial representation
+
+### ML-Powered CCTV Integration
+- 10+ simulated CCTV camera feeds positioned throughout the venue
+- ML model processes feeds every 5 seconds to detect crowd density
+- Automatic occupancy updates based on detected person counts
+- Visual camera indicators showing detection counts and status
+- Real-time data aggregation from multiple cameras per area
+
+### Smart Navigation with Checkpoints
+- 16+ predefined checkpoints across the venue (waypoints, decision points, destinations)
+- AI-powered route calculation avoiding high-density areas
+- Step-by-step navigation with visual path rendering
+- Checkpoint-based progress tracking ("Reached Checkpoint" system)
+- Animated route visualization with arrows and progress indicators
+- Current position highlighting with pulse effects
+- Alternative route suggestions based on crowd levels
+
+### Navigation Features
+- Interactive route planning from any checkpoint to any destination
+- Real-time route recalculation based on crowd changes
+- Visual progress tracking with completed/current/upcoming checkpoints
+- Estimated time and distance calculations
+- Accessible routing options
+- Cancel and restart navigation at any time
+
+### Technical Implementation
+- Canvas-based rendering for smooth 60fps animations
+- Polygon hit detection for area selection
+- Pathfinding algorithm considering area connections
+- Real-time data updates without page refresh
+- Responsive design adapting to screen sizes
+- TypeScript type safety for all venue data structures
+
+## 6. What Is Implemented
 ### Frontend (React + Vite)
 - Landing page with authentication-style entry and animated hero section
-- Dashboard with live heatmap simulation plus 15-minute zone forecasting
+- Dashboard with live venue blueprint heatmap and ML-powered crowd monitoring
+- Interactive venue map with 18+ areas, CCTV feeds, and real-time updates
 - Virtual queue page
 - Food ordering page
-- Smart navigation page with phase-aware and mobility-aware route recommendations
+- Smart navigation page with checkpoint-based routing and visual path guidance
 - Parking page with availability cards
 - Emergency and safety page
 - Admin analytics page
@@ -38,6 +80,7 @@ The platform now features a modern, polished interface with:
 - AI/ML Insights panel for context-aware recommendations
 - Toast notification system for real-time alerts
 - Advanced loading states and skeleton screens
+- Canvas-based venue blueprint rendering
 
 ### Backend (Node.js + Express)
 - Queue, food, chat, alerts, analytics, parking APIs
@@ -46,6 +89,7 @@ The platform now features a modern, polished interface with:
 - Hybrid prediction engine (crowd and wait-time)
 - Gemini integration for conversational and summary narratives
 - Dockerfile for Cloud Run
+- CCTV feed simulation and ML processing endpoints (ready for integration)
 
 ## 6. AI/ML Service (Hackathon Critical)
 VenueFlow includes a dedicated AI/ML decision service, not only static mock responses.
