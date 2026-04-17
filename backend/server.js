@@ -6,6 +6,7 @@ import analyticsRoutes from './routes/analytics.js'
 import chatRoutes from './routes/chat.js'
 import foodRoutes from './routes/food.js'
 import mlRoutes from './routes/ml.js'
+import navigationRoutes from './routes/navigation.js'
 import parkingRoutes from './routes/parking.js'
 import queueRoutes from './routes/queue.js'
 
@@ -32,6 +33,7 @@ app.use('/api/alerts', alertsRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/parking', parkingRoutes)
 app.use('/api/ml', mlRoutes)
+app.use('/api/navigation', navigationRoutes)
 
 app.use((error, _req, res, _next) => {
   res.status(500).json({

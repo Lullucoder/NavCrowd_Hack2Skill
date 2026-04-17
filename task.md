@@ -44,3 +44,10 @@
 - [x] Accessibility baseline documented and implemented
 - [x] Build validation completed
 - [ ] Deep manual QA and final polish pass
+
+## Phase 7: Advanced Experience Sprint
+- [x] Add navigation intelligence API with route scoring and alternatives
+- [x] Add mobility-aware path mode and event-phase based routing
+- [x] Upgrade heatmap with forecast, hotspot ranking, and action recommendations
+- [x] Improve dashboard usability with actionable congestion insights
+- [x] Add QA checklist for crowd movement and real-world flow scenarios

@@ -79,3 +79,53 @@ export interface MlInsightsResponse {
   narrative: string | null
   provider: string
 }
+
+export interface NavigationRouteOption {
+  routeId: string
+  parking: {
+    id: string
+    name: string
+    availableSpots: number
+    totalSpots: number
+    walkMinutes: number
+  }
+  gate: string
+  lane: string
+  estimatedTravelMinutes: number
+  congestionScore: number
+  confidence: number
+  accessibility: 'ramp' | 'stairs'
+  explanation: string
+  steps: string[]
+}
+
+export interface NavigationAssistResponse {
+  generatedAt: string
+  context: {
+    seat: string
+    seatSide: 'north' | 'south' | 'center'
+    phase: 'entry' | 'halftime' | 'exit'
+    intent: 'quick' | 'comfort' | 'merch'
+    mobilityNeed: boolean
+  }
+  telemetry: {
+    occupancyPercent: number
+    averageQueueWaitMinutes: number
+    highRiskZones: number
+  }
+  bestRoute: NavigationRouteOption
+  alternatives: NavigationRouteOption[]
+  hotspots: Array<{
+    id: string
+    name: string
+    level: HeatLevel
+    occupancyRatio: number
+    action: string
+  }>
+  timingAdvice: {
+    leaveInMinutes: number
+    recommendedWindow: string
+    rationale: string
+  }
+  coordinationHint: string
+}

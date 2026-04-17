@@ -14,10 +14,11 @@ Design a solution that improves the physical event experience for attendees at l
 ## 4. What Is Implemented
 ### Frontend (React + Vite)
 - Landing page with authentication-style entry
-- Dashboard with live heatmap simulation
+- Dashboard with live heatmap simulation plus 15-minute zone forecasting
 - Virtual queue page
 - Food ordering page
-- Navigation and parking pages
+- Smart navigation page with phase-aware and mobility-aware route recommendations
+- Parking page with availability cards
 - Emergency and safety page
 - Admin analytics page
 - Gemini-backed chatbot with fallback
@@ -25,6 +26,7 @@ Design a solution that improves the physical event experience for attendees at l
 
 ### Backend (Node.js + Express)
 - Queue, food, chat, alerts, analytics, parking APIs
+- Navigation intelligence API for route scoring and alternatives
 - Dedicated AI/ML insights API
 - Hybrid prediction engine (crowd and wait-time)
 - Gemini integration for conversational and summary narratives
@@ -158,6 +160,7 @@ Physical Event Experience/
 - POST /api/chat
 - GET /api/parking
 - GET /api/parking/recommendation
+- GET /api/navigation/assist
 - POST /api/ml/insights
 
 ### Example: AI/ML Insights Request
@@ -209,7 +212,7 @@ npm run dev:backend
 
 ### Backend to Cloud Run
 ```powershell
-./scripts/deploy-backend.ps1 -ProjectId your-gcp-project-id -Region us-central1
+./scripts/deploy-backend.ps1 -ProjectId your-gcp-project-id -Region asia-south1
 ```
 
 ## 14. Security, Accessibility, and Code Quality
@@ -258,3 +261,39 @@ This repository includes:
 - Complete code for frontend and backend
 - README covering vertical, approach, logic, assumptions, deployment, and evaluation focus
 - Public-friendly structure for single-branch hackathon delivery
+
+## 19. Advanced Experience Upgrade Plan (In Progress)
+To better align with judging criteria for real-world usability and smart assistance, VenueFlow is being upgraded from dashboard-style simulation to decision-first attendee guidance.
+
+### Sprint Goals
+- Make navigation context-aware, not static.
+- Make crowd heatmap predictive, not only descriptive.
+- Improve operator and attendee coordination with actionable recommendations.
+
+### Track A: Smart Navigation Intelligence
+- Add route scoring based on seat block, event phase, crowd pressure, queue pressure, and parking availability.
+- Return best route plus alternatives with confidence and time estimates.
+- Include mobility-friendly routing mode and route-step generation.
+
+### Track B: Predictive Heatmap UX
+- Add short-horizon forecast for selected zone occupancy.
+- Rank and surface top hotspot zones with recommended actions.
+- Add trend-aware severity interpretation for operators and fans.
+
+### Track C: Evaluation Strengthening
+- Expand README evidence mapping for each challenge expectation.
+- Add explicit manual QA scenarios for crowd movement and routing quality.
+- Keep modular service boundaries so features remain maintainable.
+
+### Expected Outcome
+- Stronger demonstration of dynamic assistant behavior.
+- Better contextual decision-making for attendee movement and waiting reduction.
+- More practical real-world usability narrative for judges.
+
+## 20. Real-World QA Checklist (Crowd and Movement)
+- Entry surge scenario: Validate that route recommendation avoids highest-pressure gate during first 30 minutes.
+- Halftime transition scenario: Validate route recalculation with phase set to halftime and compare ETA differences.
+- Exit wave scenario: Validate stagger guidance and hotspot warnings for critical zones.
+- Mobility scenario: Enable mobility-friendly mode and confirm routes prefer ramp-access gates.
+- Queue-pressure scenario: Confirm navigation timing shifts when queue waits are high.
+- API fallback scenario: Stop backend and confirm frontend fallback recommendation remains usable.
