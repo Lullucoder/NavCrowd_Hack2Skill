@@ -1,4 +1,4 @@
-import { AlertTriangle, Gauge, LayoutDashboard, MapPinned, ShieldAlert, UtensilsCrossed, Waypoints } from 'lucide-react'
+import { AlertTriangle, Gauge, LayoutDashboard, MapPinned, ShieldAlert, Sparkles, UtensilsCrossed, Waypoints } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const navItems = [
@@ -12,9 +12,21 @@ const navItems = [
 ]
 
 export const Sidebar = () => (
-  <aside className="vf-sidebar gradient-border">
-    <div className="vf-sidebar-brand">
-      <div className="vf-brand-logo">VF</div>
+  <aside className="vf-sidebar gradient-border animate-slideUp">
+    <div className="vf-sidebar-brand" style={{ position: 'relative' }}>
+      <div className="vf-brand-logo hover-lift" style={{ position: 'relative' }}>
+        <Sparkles size={20} className="animate-glow" style={{ color: 'white' }} />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--gradient-primary)',
+            opacity: 0.2,
+            animation: 'pulse-glow 2s ease-in-out infinite'
+          }}
+        />
+      </div>
       <div>
         <p className="vf-brand-title">VenueFlow</p>
         <p className="vf-brand-tagline">Your Stadium, Smarter</p>
@@ -22,7 +34,7 @@ export const Sidebar = () => (
     </div>
 
     <nav className="vf-sidebar-nav">
-      {navItems.map((item) => {
+      {navItems.map((item, index) => {
         const Icon = item.icon
 
         return (
@@ -30,6 +42,9 @@ export const Sidebar = () => (
             key={item.to}
             to={item.to}
             className={({ isActive }) => (isActive ? 'vf-nav-link active' : 'vf-nav-link')}
+            style={{
+              animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`
+            }}
           >
             <Icon size={18} />
             <span>{item.label}</span>
@@ -37,5 +52,23 @@ export const Sidebar = () => (
         )
       })}
     </nav>
+
+    <div
+      style={{
+        marginTop: 'auto',
+        padding: 'var(--space-md)',
+        borderRadius: 'var(--radius-md)',
+        background: 'rgba(59, 130, 246, 0.1)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        fontSize: '0.75rem',
+        color: 'var(--text-secondary)',
+        animation: 'fadeIn 0.5s ease-out 0.5s both'
+      }}
+    >
+      <p style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--accent-blue)' }}>
+        🚀 Google Hackathon 2026
+      </p>
+      <p>Physical Event Experience Challenge</p>
+    </div>
   </aside>
 )

@@ -1,4 +1,4 @@
-import { Bell, LogOut, Radar } from 'lucide-react'
+import { Bell, LogOut, Radar, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface NavbarProps {
@@ -18,27 +18,30 @@ export const Navbar = ({ userName, onLogout }: NavbarProps) => {
   }, [])
 
   return (
-    <header className="vf-navbar glass-card">
+    <header className="vf-navbar glass-card-static animate-slideDown">
       <div className="vf-navbar-title">
-        <Radar size={18} />
+        <Radar size={18} className="animate-glow" style={{ color: 'var(--accent-blue)' }} />
         <span>VenueFlow Live</span>
       </div>
 
       <div className="vf-navbar-meta">
-        <div className="vf-live-group">
+        <div className="vf-live-group hover-lift">
           <span className="live-dot" aria-hidden="true" />
           <span>Live</span>
         </div>
 
         <div className="vf-clock">{now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
 
-        <button className="btn btn-ghost vf-icon-btn" aria-label="Notifications">
+        <button className="btn btn-ghost vf-icon-btn hover-lift" aria-label="Notifications">
           <Bell size={18} />
         </button>
 
-        <div className="vf-user-pill">{userName}</div>
+        <div className="vf-user-pill hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Sparkles size={14} style={{ color: 'var(--accent-blue)' }} />
+          {userName}
+        </div>
 
-        <button className="btn btn-secondary" onClick={onLogout}>
+        <button className="btn btn-secondary hover-lift" onClick={onLogout}>
           <LogOut size={16} />
           Logout
         </button>
