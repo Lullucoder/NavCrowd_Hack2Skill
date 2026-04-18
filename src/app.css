@@ -12,9 +12,9 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at 10% 15%, rgba(59, 130, 246, 0.18), transparent 30%),
-    radial-gradient(circle at 85% 10%, rgba(34, 197, 94, 0.14), transparent 28%),
-    radial-gradient(circle at 50% 85%, rgba(245, 158, 11, 0.12), transparent 32%);
+    radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.15), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(192, 132, 252, 0.15), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(34, 211, 238, 0.1), transparent 50%);
   pointer-events: none;
   z-index: -1;
   animation: gradient-flow 15s ease infinite;
@@ -26,6 +26,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+  border-radius: var(--radius-lg);
 }
 
 .vf-sidebar-brand {
@@ -138,6 +139,58 @@
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: 0.825rem;
+}
+
+.vf-notification-wrap {
+  position: relative;
+}
+
+.vf-notification-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 10px var(--accent-amber-glow);
+}
+
+.vf-notification-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, calc(100vw - 2rem));
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(11, 17, 32, 0.96);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  padding: 0.75rem;
+  z-index: 90;
+}
+
+.vf-notification-title {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  margin-bottom: 0.45rem;
+}
+
+.vf-notification-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.vf-notification-item {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.52rem 0.6rem;
 }
 
 .vf-content {
@@ -468,6 +521,61 @@
   font-size: 0.875rem;
 }
 
+.vf-queue-ticket {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.vf-queue-ticket-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.vf-queue-ticket-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: var(--space-md);
+  align-items: start;
+}
+
+.vf-queue-ticket-meta {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.vf-queue-token-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.4rem 0.55rem;
+  width: fit-content;
+  font-family: var(--font-mono);
+}
+
+.vf-queue-qr-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.35);
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+}
+
+.vf-queue-qr-image {
+  width: 100%;
+  max-width: 190px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #f8fafc;
+  padding: 6px;
+}
+
 .vf-queue-metrics {
   margin: var(--space-md) 0;
   display: grid;
@@ -487,6 +595,13 @@
   gap: var(--space-md);
 }
 
+.vf-food-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-md);
+  align-items: start;
+}
+
 .vf-food-bottom {
   margin-top: var(--space-md);
   display: flex;
@@ -498,6 +613,46 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
+}
+
+.vf-cart-panel {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.vf-cart-panel .btn {
+  width: 100%;
+}
+
+.vf-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.vf-inline-note {
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--text-primary);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.vf-parking-advisory {
+  padding: var(--space-lg);
+  display: grid;
+  gap: var(--space-md);
+}
+
+.vf-selected-zone-panel {
+  padding: var(--space-md);
 }
 
 .vf-seat-row {
@@ -535,6 +690,26 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
+}
+
+.vf-navigation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: var(--space-lg);
+}
+
+.vf-nav-status-note {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.11);
+  color: var(--text-primary);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: var(--space-md);
+  font-size: 0.86rem;
+}
+
+.vf-navigation-sidebar {
+  min-width: 0;
 }
 
 .vf-nav-fallback-note {
@@ -751,14 +926,34 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .vf-food-layout {
+    grid-template-columns: 1fr;
+  }
+
   .vf-ai-form-row,
   .vf-ai-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .vf-queue-ticket-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-queue-qr-card {
+    justify-items: flex-start;
+  }
+
+  .vf-queue-qr-image {
+    max-width: 180px;
+  }
+
   .vf-nav-control-grid,
   .vf-heatmap-hotspot-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vf-navigation-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
   }
 }
 
@@ -783,6 +978,10 @@
   .vf-feature-row {
     grid-template-columns: 1fr;
   }
+
+  .vf-navigation-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -798,6 +997,12 @@
     flex-wrap: wrap;
   }
 
+  .vf-notification-panel {
+    right: auto;
+    left: 0;
+    width: min(320px, calc(100vw - 1.4rem));
+  }
+
   .vf-food-grid,
   .vf-heatmap-grid,
   .vf-sidebar-nav {
@@ -810,6 +1015,10 @@
     grid-template-columns: 1fr;
   }
 
+  .vf-section-label {
+    margin-bottom: var(--space-md);
+  }
+
   .vf-nav-control-actions {
     flex-direction: column;
     align-items: flex-start;
@@ -819,5 +1028,33 @@
   .vf-ai-kpis,
   .vf-ai-reco-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .vf-landing {
+    padding: var(--space-md) var(--space-xs);
+  }
+
+  .vf-auth-inner {
+    padding: var(--space-lg);
+  }
+
+  .vf-navbar-meta .btn {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  .vf-notification-panel {
+    width: calc(100vw - 1rem);
+  }
+
+  .vf-queue-token-pill {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vf-queue-qr-image {
+    max-width: 170px;
   }
 }

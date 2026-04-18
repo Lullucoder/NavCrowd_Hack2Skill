@@ -19,7 +19,7 @@ export const DashboardPage = () => {
     // Welcome toast on mount
     addToast({
       type: 'success',
-      title: 'Welcome to VenueFlow!',
+      title: 'Welcome to NavCrowd!',
       message: 'Real-time crowd monitoring is active',
       duration: 4000
     })
@@ -72,7 +72,7 @@ export const DashboardPage = () => {
       <div className="page-container">
         <header className="page-header animate-fadeIn">
           <h1 className="page-title">
-            <span className="glow-text">Matchday Command Center</span>
+            <span className="text-gradient">Matchday Command Center</span>
           </h1>
           <p className="page-subtitle">Live fan-side overview of crowd flow, alerts, and ML-powered assistance.</p>
         </header>

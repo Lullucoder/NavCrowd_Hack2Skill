@@ -1,4 +1,4 @@
-import { Camera, Zap } from 'lucide-react'
+import { AlertTriangle, Camera, Zap } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { VenueArea, VenueBlueprint, VenueCheckpoint } from '../types/venue'
 
@@ -17,11 +17,11 @@ interface VenueMapProps {
 const getAreaColor = (level: VenueArea['level'], opacity = 0.3) => {
   switch (level) {
     case 'low':
-      return `rgba(34, 197, 94, ${opacity})`
+      return `rgba(52, 211, 153, ${opacity})`
     case 'medium':
-      return `rgba(245, 158, 11, ${opacity})`
+      return `rgba(251, 191, 36, ${opacity})`
     case 'high':
-      return `rgba(239, 68, 68, ${opacity})`
+      return `rgba(248, 113, 113, ${opacity})`
     case 'critical':
       return `rgba(220, 38, 38, ${opacity})`
   }
@@ -30,14 +30,48 @@ const getAreaColor = (level: VenueArea['level'], opacity = 0.3) => {
 const getAreaStrokeColor = (level: VenueArea['level']) => {
   switch (level) {
     case 'low':
-      return 'rgba(34, 197, 94, 0.8)'
+      return '#34d399'
     case 'medium':
-      return 'rgba(245, 158, 11, 0.8)'
+      return '#fbbf24'
     case 'high':
-      return 'rgba(239, 68, 68, 0.8)'
+      return '#f87171'
     case 'critical':
-      return 'rgba(220, 38, 38, 1)'
+      return '#dc2626'
   }
+}
+
+type LabelBox = {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+const isOverlapping = (a: LabelBox, b: LabelBox) => {
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom)
+}
+
+const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+  const r = Math.min(radius, width / 2, height / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + width - r, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r)
+  ctx.lineTo(x + width, y + height - r)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height)
+  ctx.lineTo(x + r, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+}
+
+const compactAreaLabel = (name: string) => {
+  const parts = name.split(' ')
+  if (parts.length <= 2) return name
+  if (parts[0].toLowerCase() === 'food' && parts[1]?.toLowerCase() === 'court') return `Food ${parts[2] ?? ''}`.trim()
+  if (parts[0].toLowerCase() === 'emergency' && parts[1]?.toLowerCase() === 'exit') return `Exit ${parts[2] ?? ''}`.trim()
+  return `${parts[0]} ${parts[1]}`
 }
 
 export const VenueMap = ({
@@ -51,12 +85,16 @@ export const VenueMap = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hoveredArea, setHoveredArea] = useState<string | null>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 800 })
+  const isCompactCanvas = canvasSize.width < 640
+  const labelFontSize = canvasSize.width < 520 ? 9 : 11
+  const metricFontSize = canvasSize.width < 520 ? 8 : 10
 
   useEffect(() => {
     const updateSize = () => {
       const container = canvasRef.current?.parentElement
       if (container) {
-        const width = Math.min(container.clientWidth - 32, 800)
+        const sidePadding = container.clientWidth < 560 ? 8 : 32
+        const width = Math.max(280, Math.min(container.clientWidth - sidePadding, 800))
         const height = width
         setCanvasSize({ width, height })
       }
@@ -92,6 +130,8 @@ export const VenueMap = ({
       ? blueprint.areas.filter((a) => a.id === selectedAreaId || a.connectedTo.includes(selectedAreaId))
       : blueprint.areas
 
+    const placedLabels: LabelBox[] = []
+
     // Draw areas
     areasToShow.forEach((area) => {
       const isSelected = area.id === selectedAreaId
@@ -121,18 +161,55 @@ export const VenueMap = ({
       // Draw area label
       const centerX = area.polygon.reduce((sum, p) => sum + p.x, 0) / area.polygon.length * scaleX
       const centerY = area.polygon.reduce((sum, p) => sum + p.y, 0) / area.polygon.length * scaleY
+      const occupancyPercent = Math.round((area.currentOccupancy / area.capacity) * 100)
+
+      const scaledPoints = area.polygon.map((point) => ({ x: point.x * scaleX, y: point.y * scaleY }))
+      const polygonWidth = Math.max(...scaledPoints.map((point) => point.x)) - Math.min(...scaledPoints.map((point) => point.x))
+      const polygonHeight = Math.max(...scaledPoints.map((point) => point.y)) - Math.min(...scaledPoints.map((point) => point.y))
+
+      const compactLabel = isCompactCanvas || polygonWidth < 130 || polygonHeight < 68
+      const areaName = compactLabel ? compactAreaLabel(area.name) : area.name
+      const occupancyText = compactLabel
+        ? `${occupancyPercent}%`
+        : `${occupancyPercent}% (${area.currentOccupancy}/${area.capacity})`
+
+      ctx.font = `bold ${labelFontSize}px Inter`
+      const areaNameWidth = ctx.measureText(areaName).width
+      ctx.font = `${metricFontSize}px Inter`
+      const occupancyWidth = ctx.measureText(occupancyText).width
+
+      const labelWidth = Math.max(areaNameWidth, occupancyWidth) + 14
+      const labelHeight = compactLabel ? 24 : 30
+      const labelBox: LabelBox = {
+        left: centerX - labelWidth / 2,
+        top: centerY - labelHeight / 2,
+        right: centerX + labelWidth / 2,
+        bottom: centerY + labelHeight / 2
+      }
+
+      const hiddenByCollision = placedLabels.some((existingLabel) => isOverlapping(existingLabel, labelBox))
+      if (hiddenByCollision && !isSelected && !isHovered) {
+        return
+      }
+
+      placedLabels.push(labelBox)
+
+      drawRoundedRect(ctx, labelBox.left, labelBox.top, labelWidth, labelHeight, 6)
+      ctx.fillStyle = 'rgba(3, 7, 18, 0.56)'
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.24)'
+      ctx.lineWidth = 1
+      ctx.stroke()
 
       ctx.fillStyle = '#f1f5f9'
-      ctx.font = 'bold 11px Inter'
+      ctx.font = `bold ${labelFontSize}px Inter`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText(area.name, centerX, centerY - 8)
+      ctx.fillText(areaName, centerX, centerY - (compactLabel ? 4 : 6))
 
-      // Draw occupancy
-      ctx.font = '10px Inter'
-      ctx.fillStyle = '#94a3b8'
-      const occupancyPercent = Math.round((area.currentOccupancy / area.capacity) * 100)
-      ctx.fillText(`${occupancyPercent}% (${area.currentOccupancy}/${area.capacity})`, centerX, centerY + 8)
+      ctx.font = `${metricFontSize}px Inter`
+      ctx.fillStyle = occupancyPercent >= 80 ? '#f87171' : occupancyPercent >= 60 ? '#fbbf24' : '#94a3b8'
+      ctx.fillText(occupancyText, centerX, centerY + (compactLabel ? 6 : 8))
     })
 
     // Draw CCTV cameras
@@ -144,14 +221,14 @@ export const VenueMap = ({
         const y = feed.position.y * scaleY
 
         // Camera icon background
-        ctx.fillStyle = feed.status === 'active' ? 'rgba(59, 130, 246, 0.8)' : 'rgba(148, 163, 184, 0.5)'
+        ctx.fillStyle = feed.status === 'active' ? 'rgba(56, 189, 248, 0.8)' : 'rgba(148, 163, 184, 0.5)'
         ctx.beginPath()
         ctx.arc(x, y, 8, 0, Math.PI * 2)
         ctx.fill()
 
         // Camera pulse effect for active cameras
         if (feed.status === 'active') {
-          ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)'
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'
           ctx.lineWidth = 2
           ctx.beginPath()
           ctx.arc(x, y, 12, 0, Math.PI * 2)
@@ -172,7 +249,7 @@ export const VenueMap = ({
       const checkpoints = navigationRoute.checkpoints
 
       // Draw path line
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)'
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'
       ctx.lineWidth = 4
       ctx.setLineDash([10, 5])
       ctx.beginPath()
@@ -204,7 +281,7 @@ export const VenueMap = ({
           ? 'rgba(34, 197, 94, 0.9)'
           : isPassed
           ? 'rgba(148, 163, 184, 0.6)'
-          : 'rgba(59, 130, 246, 0.8)'
+          : 'rgba(56, 189, 248, 0.8)'
         ctx.fill()
 
         ctx.strokeStyle = '#ffffff'
@@ -241,7 +318,7 @@ export const VenueMap = ({
           ctx.translate(arrowX, arrowY)
           ctx.rotate(angle)
 
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.9)'
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)'
           ctx.beginPath()
           ctx.moveTo(10, 0)
           ctx.lineTo(0, -6)
@@ -306,6 +383,7 @@ export const VenueMap = ({
         style={{
           width: '100%',
           height: 'auto',
+          display: 'block',
           cursor: onAreaSelect ? 'pointer' : 'default',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--border-subtle)'
@@ -322,7 +400,7 @@ export const VenueMap = ({
             background: 'rgba(11, 19, 36, 0.9)',
             backdropFilter: 'blur(10px)',
             borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -333,6 +411,30 @@ export const VenueMap = ({
           <Camera size={14} />
           <Zap size={12} className="animate-glow" />
           <span>ML Processing Active</span>
+        </div>
+      )}
+
+      {blueprint.incident?.active && (
+        <div
+          style={{
+            position: 'absolute',
+            top: showCCTV ? 'calc(var(--space-md) + 44px)' : 'var(--space-md)',
+            right: 'var(--space-md)',
+            maxWidth: isCompactCanvas ? '60%' : '300px',
+            padding: '8px 10px',
+            background: 'rgba(239, 68, 68, 0.14)',
+            border: '1px solid rgba(239, 68, 68, 0.45)',
+            borderRadius: 'var(--radius-md)',
+            color: '#fecaca',
+            fontSize: '0.72rem',
+            lineHeight: 1.35,
+            display: 'flex',
+            gap: '6px',
+            alignItems: 'flex-start'
+          }}
+        >
+          <AlertTriangle size={14} />
+          <span>{blueprint.incident.guidance}</span>
         </div>
       )}
     </div>

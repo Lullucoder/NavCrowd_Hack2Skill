@@ -43,7 +43,7 @@ export const LandingPage = ({ onSignIn }: LandingPageProps) => {
           <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
             <p className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <Sparkles size={14} />
-              NexGen Arena • Live Event Mode
+              NavCrowd • Live Event Mode
             </p>
           </div>
           
@@ -54,7 +54,7 @@ export const LandingPage = ({ onSignIn }: LandingPageProps) => {
           </h1>
           
           <p className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
-            VenueFlow helps attendees avoid crowd bottlenecks, join virtual queues, order food faster, and stay safe with
+            NavCrowd helps attendees avoid crowd bottlenecks, join virtual queues, order food faster, and stay safe with
             AI-powered live guidance.
           </p>
 
@@ -118,12 +118,6 @@ export const LandingPage = ({ onSignIn }: LandingPageProps) => {
                   <ArrowRight size={20} />
                 </button>
               </form>
-
-              <div style={{ marginTop: 'var(--space-lg)', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border-subtle)' }}>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                  Built for Google Hackathon 2026 • Physical Event Experience
-                </p>
-              </div>
             </div>
           </div>
         </aside>

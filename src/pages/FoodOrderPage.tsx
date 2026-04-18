@@ -52,16 +52,19 @@ export const FoodOrderPage = () => {
       </section>
 
       <div className="vf-section-space" />
-      <FoodMenu items={visibleItems} onAdd={(item) => setCart((prev) => [...prev, item])} />
+      <section className="vf-food-layout">
+        <div>
+          <FoodMenu items={visibleItems} onAdd={(item) => setCart((prev) => [...prev, item])} />
+        </div>
 
-      <div className="vf-section-space" />
-      <section className="glass-card vf-cart-panel">
-        <h3>Cart ({cart.length})</h3>
-        <p>Total: Rs {total}</p>
-        <p>Status: {orderState === 'idle' ? 'Waiting for checkout' : orderState === 'preparing' ? 'Preparing' : 'Ready for pickup'}</p>
-        <button className="btn btn-success" onClick={placeOrder} disabled={cart.length === 0 || orderState === 'preparing'}>
-          {orderState === 'preparing' ? 'Preparing...' : 'Place Order'}
-        </button>
+        <aside className="glass-card vf-cart-panel">
+          <h3>Cart ({cart.length})</h3>
+          <p>Total: Rs {total}</p>
+          <p>Status: {orderState === 'idle' ? 'Waiting for checkout' : orderState === 'preparing' ? 'Preparing' : 'Ready for pickup'}</p>
+          <button className="btn btn-success" onClick={placeOrder} disabled={cart.length === 0 || orderState === 'preparing'}>
+            {orderState === 'preparing' ? 'Preparing...' : 'Place Order'}
+          </button>
+        </aside>
       </section>
     </div>
   )

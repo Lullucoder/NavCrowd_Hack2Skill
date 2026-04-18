@@ -55,6 +55,17 @@ export interface CCTVFeed {
   lastUpdate: string
 }
 
+export interface VenueIncident {
+  id: string
+  type: 'fire' | 'medical' | 'security'
+  areaId: string
+  severity: 'medium' | 'high' | 'critical'
+  active: boolean
+  startedAt: string
+  expiresAt: string
+  guidance: string
+}
+
 export interface VenueBlueprint {
   id: string
   name: string
@@ -64,4 +75,5 @@ export interface VenueBlueprint {
   checkpoints: VenueCheckpoint[]
   paths: VenuePath[]
   cctvFeeds: CCTVFeed[]
+  incident?: VenueIncident | null
 }

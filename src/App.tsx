@@ -11,7 +11,7 @@ import { NavigationPage } from './pages/NavigationPage'
 import { ParkingPage } from './pages/ParkingPage'
 import { QueuePage } from './pages/QueuePage'
 
-const storageKey = 'venueflow-auth-name'
+const storageKey = 'navcrowd-auth-name'
 
 interface AppShellProps {
   userName: string

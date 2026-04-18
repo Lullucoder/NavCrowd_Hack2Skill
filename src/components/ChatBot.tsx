@@ -7,7 +7,7 @@ import type { ChatMessage } from '../types'
 const initialMessage: ChatMessage = {
   id: 'intro',
   sender: 'assistant',
-  text: 'Hi, I am your VenueFlow assistant powered by Google Gemini. Ask me about queues, food, gates, parking, and emergency routes.',
+  text: 'Hi, I am your NavCrowd assistant powered by Google Gemini. Ask me about queues, food, gates, parking, and emergency routes.',
   timestamp: new Date().toISOString()
 }
 

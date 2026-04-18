@@ -28,8 +28,8 @@ export const Sidebar = () => (
         />
       </div>
       <div>
-        <p className="vf-brand-title">VenueFlow</p>
-        <p className="vf-brand-tagline">Your Stadium, Smarter</p>
+        <p className="vf-brand-title">NavCrowd</p>
+        <p className="vf-brand-tagline">Crowd Intelligence Hub</p>
       </div>
     </div>
 
@@ -65,10 +65,8 @@ export const Sidebar = () => (
         animation: 'fadeIn 0.5s ease-out 0.5s both'
       }}
     >
-      <p style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--accent-blue)' }}>
-        🚀 Google Hackathon 2026
-      </p>
-      <p>Physical Event Experience Challenge</p>
+      <p style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>Live Ops Feed</p>
+      <p>Telemetry refreshes every 5 seconds across crowd, route, and safety modules.</p>
     </div>
   </aside>
 )
