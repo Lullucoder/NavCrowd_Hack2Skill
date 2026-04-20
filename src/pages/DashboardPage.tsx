@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Clock, Users } from 'lucide-react'
+import { Activity, AlertTriangle, Armchair, Clock, QrCode, Ticket, Trophy, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { AiInsightsPanel } from '../components/AiInsightsPanel'
 import { AlertBanner } from '../components/AlertBanner'
@@ -8,12 +8,28 @@ import { ToastContainer, useToast } from '../components/Toast'
 import { VenueMap } from '../components/VenueMap'
 import { alertSeed } from '../data/mockData'
 import { updateCrowdDataFromCCTV, venueBlueprint } from '../data/venueBlueprint'
+import type { UserTicketProfile } from '../types'
 import type { VenueBlueprint } from '../types/venue'
 
-export const DashboardPage = () => {
+interface DashboardPageProps {
+  ticketProfile: UserTicketProfile
+}
+
+export const DashboardPage = ({ ticketProfile }: DashboardPageProps) => {
   const [blueprint, setBlueprint] = useState<VenueBlueprint>(venueBlueprint)
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false)
   const { toasts, addToast, removeToast } = useToast()
+
+  const ticketStampDate = useMemo(
+    () => new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }),
+    []
+  )
+
+  const ticketQrPayload = useMemo(
+    () => `NC|${ticketProfile.sport}|${ticketProfile.ticketNumber}|${ticketProfile.seatNumber}|${ticketProfile.name}`,
+    [ticketProfile]
+  )
 
   useEffect(() => {
     // Welcome toast on mount
@@ -77,6 +93,41 @@ export const DashboardPage = () => {
           <p className="page-subtitle">Live fan-side overview of crowd flow, alerts, and ML-powered assistance.</p>
         </header>
 
+        <section className="vf-ticket-summary glass-card-static animate-slideUp" style={{ animationDelay: '0.15s', opacity: 0 }}>
+          <div className="vf-ticket-summary-head">
+            <div>
+              <p className="vf-section-label">
+                <Ticket size={14} />
+                Verified Ticket
+              </p>
+              <h2>
+                {ticketProfile.sport} Match Pass • Seat {ticketProfile.seatNumber}
+              </h2>
+              <p className="vf-muted">
+                Ticket {ticketProfile.ticketNumber} is mapped to {ticketProfile.name}. This event is currently configured for cricket by default.
+              </p>
+            </div>
+            <button className="btn btn-primary" onClick={() => setIsTicketModalOpen(true)}>
+              View Ticket Pass
+            </button>
+          </div>
+
+          <div className="vf-ticket-chip-row">
+            <span className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Trophy size={14} />
+              {ticketProfile.sport}
+            </span>
+            <span className="badge badge-green" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Armchair size={14} />
+              Seat {ticketProfile.seatNumber}
+            </span>
+            <span className="badge badge-amber" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Ticket size={14} />
+              {ticketProfile.ticketNumber}
+            </span>
+          </div>
+        </section>
+
         <section className="grid-4 stagger-children">
           <StatsCard
             label="Live Occupancy"
@@ -136,8 +187,8 @@ export const DashboardPage = () => {
                   style={{
                     marginTop: 'var(--space-md)',
                     padding: 'var(--space-md)',
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    background: 'rgba(249, 115, 22, 0.11)',
+                    border: '1px solid rgba(249, 115, 22, 0.32)',
                     borderRadius: 'var(--radius-md)'
                   }}
                 >
@@ -163,6 +214,56 @@ export const DashboardPage = () => {
           <AiInsightsPanel />
         </div>
       </div>
+
+      {isTicketModalOpen ? (
+        <div
+          className="vf-ticket-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ticket pass"
+          onClick={() => setIsTicketModalOpen(false)}
+        >
+          <div className="vf-ticket-modal" onClick={(event) => event.stopPropagation()}>
+            <button
+              className="btn btn-ghost vf-ticket-close-btn"
+              onClick={() => setIsTicketModalOpen(false)}
+              aria-label="Close ticket pass"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="vf-ticket-pass">
+              <p className="vf-ticket-pass-kicker">NavCrowd Match Ticket</p>
+              <h3>{ticketProfile.sport} Entry Pass</h3>
+              <p className="vf-muted">Ticket holder: {ticketProfile.name}</p>
+
+              <div className="vf-ticket-pass-grid">
+                <div>
+                  <span>Ticket Number</span>
+                  <strong>{ticketProfile.ticketNumber}</strong>
+                </div>
+                <div>
+                  <span>Seat</span>
+                  <strong>{ticketProfile.seatNumber}</strong>
+                </div>
+                <div>
+                  <span>Sport</span>
+                  <strong>{ticketProfile.sport}</strong>
+                </div>
+                <div>
+                  <span>Issued</span>
+                  <strong>{ticketStampDate}</strong>
+                </div>
+              </div>
+
+              <div className="vf-ticket-qr-block" aria-label="Ticket quick scan code">
+                <QrCode size={30} />
+                <code>{ticketQrPayload}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }

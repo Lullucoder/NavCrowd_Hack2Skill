@@ -1,25 +1,108 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AlertBanner } from '../components/AlertBanner'
 import { EmergencyPanel } from '../components/EmergencyPanel'
 import { alertSeed } from '../data/mockData'
 import type { AlertItem } from '../types'
 
-export const EmergencyPage = () => {
+interface EmergencyPageProps {
+  onSosBroadcast?: (alert: AlertItem) => void
+}
+
+const isAlertItem = (value: unknown): value is AlertItem => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const alert = value as Record<string, unknown>
+  return (
+    typeof alert.id === 'string' &&
+    typeof alert.title === 'string' &&
+    typeof alert.message === 'string' &&
+    typeof alert.severity === 'string' &&
+    typeof alert.createdAt === 'string'
+  )
+}
+
+export const EmergencyPage = ({ onSosBroadcast }: EmergencyPageProps) => {
   const [alerts, setAlerts] = useState<AlertItem[]>(alertSeed)
+  const [isTriggeringSos, setIsTriggeringSos] = useState(false)
 
   const criticalAlert = useMemo(() => alerts.find((alert) => alert.severity === 'critical') ?? null, [alerts])
 
-  const triggerSos = () => {
-    setAlerts((current) => [
-      {
-        id: crypto.randomUUID(),
-        title: 'SOS Triggered',
-        message: 'Medical support dispatched to Section B lower concourse.',
-        severity: 'critical',
-        createdAt: new Date().toISOString()
-      },
-      ...current
-    ])
+  useEffect(() => {
+    let cancelled = false
+
+    const syncAlerts = async () => {
+      try {
+        const response = await fetch('/api/alerts')
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as { alerts?: unknown }
+        const syncedAlerts = Array.isArray(payload.alerts) ? payload.alerts.filter(isAlertItem) : []
+
+        if (!cancelled && syncedAlerts.length) {
+          setAlerts(syncedAlerts)
+        }
+      } catch {
+        // Keep local alerts when endpoint is unavailable.
+      }
+    }
+
+    void syncAlerts()
+    const timerId = window.setInterval(() => {
+      void syncAlerts()
+    }, 10000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timerId)
+    }
+  }, [])
+
+  const triggerSos = async () => {
+    if (isTriggeringSos) {
+      return
+    }
+
+    setIsTriggeringSos(true)
+
+    const seat = window.localStorage.getItem('navcrowd-seat-number') ?? 'B-127'
+    const fallbackAlert: AlertItem = {
+      id: crypto.randomUUID(),
+      title: 'SOS Triggered',
+      message: `Medical support dispatched. Fan assistance requested at seat ${seat}.`,
+      severity: 'critical',
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const response = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'SOS Triggered',
+          message: fallbackAlert.message,
+          severity: 'critical'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Unable to broadcast SOS right now')
+      }
+
+      const persistedAlert = (await response.json()) as AlertItem
+      setAlerts((current) => [persistedAlert, ...current.filter((alert) => alert.id !== persistedAlert.id)])
+      onSosBroadcast?.(persistedAlert)
+    } catch {
+      setAlerts((current) => [fallbackAlert, ...current])
+      onSosBroadcast?.(fallbackAlert)
+    } finally {
+      setIsTriggeringSos(false)
+    }
   }
 
   return (
@@ -40,7 +123,7 @@ export const EmergencyPage = () => {
       )}
 
       <div className="vf-section-space" />
-      <EmergencyPanel activeAlert={criticalAlert} onSos={triggerSos} />
+      <EmergencyPanel activeAlert={criticalAlert} onSos={triggerSos} isTriggeringSos={isTriggeringSos} />
 
       <div className="vf-section-space" />
       <section className="glass-card vf-alert-history">

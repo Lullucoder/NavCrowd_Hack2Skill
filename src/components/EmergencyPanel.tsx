@@ -3,10 +3,11 @@ import type { AlertItem } from '../types'
 
 interface EmergencyPanelProps {
   activeAlert: AlertItem | null
-  onSos: () => void
+  onSos: () => void | Promise<void>
+  isTriggeringSos?: boolean
 }
 
-export const EmergencyPanel = ({ activeAlert, onSos }: EmergencyPanelProps) => (
+export const EmergencyPanel = ({ activeAlert, onSos, isTriggeringSos = false }: EmergencyPanelProps) => (
   <section className="glass-card vf-emergency-panel">
     <div className="vf-panel-head">
       <div>
@@ -25,9 +26,11 @@ export const EmergencyPanel = ({ activeAlert, onSos }: EmergencyPanelProps) => (
       <p className="vf-muted">No active critical alert right now.</p>
     )}
 
-    <button className="btn btn-danger btn-lg" onClick={onSos}>
+    <p className="vf-muted">Broadcast goes to connected dashboards, including mobile layouts.</p>
+
+    <button className="btn btn-danger btn-lg" onClick={onSos} disabled={isTriggeringSos}>
       <AlertOctagon size={18} />
-      Trigger SOS
+      {isTriggeringSos ? 'Broadcasting SOS...' : 'Trigger SOS'}
     </button>
   </section>
 )

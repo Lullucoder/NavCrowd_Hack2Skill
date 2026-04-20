@@ -92,12 +92,12 @@ export const queueStallsSeed: QueueStall[] = [
 ]
 
 export const menuSeed: MenuItem[] = [
-  { id: 'm1', stallId: 'f-01', name: 'Classic Smash Burger', price: 220, category: 'Non-Veg', prepMinutes: 7 },
-  { id: 'm2', stallId: 'f-01', name: 'Loaded Fries', price: 140, category: 'Veg', prepMinutes: 5 },
-  { id: 'm3', stallId: 'f-02', name: 'Paneer Tikka Wrap', price: 180, category: 'Veg', prepMinutes: 6 },
-  { id: 'm4', stallId: 'f-02', name: 'Chicken Shawarma Wrap', price: 210, category: 'Non-Veg', prepMinutes: 7 },
-  { id: 'm5', stallId: 'f-01', name: 'Arena Cola', price: 90, category: 'Drinks', prepMinutes: 2 },
-  { id: 'm6', stallId: 'f-02', name: 'Matchday Combo', price: 290, category: 'Combo', prepMinutes: 8 }
+  { id: 'm1', stallId: 'f-01', name: '🍔 Classic Smash Burger', price: 220, category: 'Non-Veg', prepMinutes: 7 },
+  { id: 'm2', stallId: 'f-01', name: '🍟 Loaded Fries', price: 140, category: 'Veg', prepMinutes: 5 },
+  { id: 'm3', stallId: 'f-02', name: '🌯 Paneer Tikka Wrap', price: 180, category: 'Veg', prepMinutes: 6 },
+  { id: 'm4', stallId: 'f-02', name: '🥙 Chicken Shawarma Wrap', price: 210, category: 'Non-Veg', prepMinutes: 7 },
+  { id: 'm5', stallId: 'f-01', name: '🥤 Arena Cola', price: 90, category: 'Drinks', prepMinutes: 2 },
+  { id: 'm6', stallId: 'f-02', name: '🍱 Matchday Combo', price: 290, category: 'Combo', prepMinutes: 8 }
 ]
 
 export const parkingSeed: ParkingZone[] = [

@@ -58,8 +58,8 @@ export const Sidebar = () => (
         marginTop: 'auto',
         padding: 'var(--space-md)',
         borderRadius: 'var(--radius-md)',
-        background: 'rgba(59, 130, 246, 0.1)',
-        border: '1px solid rgba(59, 130, 246, 0.2)',
+        background: 'rgba(249, 115, 22, 0.12)',
+        border: '1px solid rgba(249, 115, 22, 0.28)',
         fontSize: '0.75rem',
         color: 'var(--text-secondary)',
         animation: 'fadeIn 0.5s ease-out 0.5s both'

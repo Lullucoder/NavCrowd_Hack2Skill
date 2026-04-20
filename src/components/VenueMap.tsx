@@ -83,8 +83,8 @@ const drawStadiumBackdrop = (ctx: CanvasRenderingContext2D, width: number, heigh
   const innerY = height * 0.28
 
   const bowlGradient = ctx.createRadialGradient(centerX, centerY, width * 0.08, centerX, centerY, width * 0.55)
-  bowlGradient.addColorStop(0, 'rgba(30, 41, 59, 0.62)')
-  bowlGradient.addColorStop(1, 'rgba(15, 23, 42, 0.08)')
+  bowlGradient.addColorStop(0, 'rgba(126, 68, 35, 0.55)')
+  bowlGradient.addColorStop(1, 'rgba(69, 42, 25, 0.1)')
 
   ctx.save()
   ctx.fillStyle = bowlGradient
@@ -92,13 +92,13 @@ const drawStadiumBackdrop = (ctx: CanvasRenderingContext2D, width: number, heigh
   ctx.ellipse(centerX, centerY, outerX, outerY, 0, 0, Math.PI * 2)
   ctx.fill()
 
-  ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)'
+  ctx.strokeStyle = 'rgba(249, 115, 22, 0.24)'
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.ellipse(centerX, centerY, outerX, outerY, 0, 0, Math.PI * 2)
   ctx.stroke()
 
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.62)'
+  ctx.fillStyle = 'rgba(45, 28, 17, 0.64)'
   ctx.beginPath()
   ctx.ellipse(centerX, centerY, innerX, innerY, 0, 0, Math.PI * 2)
   ctx.fill()
@@ -126,6 +126,8 @@ const drawStadiumBackdrop = (ctx: CanvasRenderingContext2D, width: number, heigh
 const compactAreaLabel = (name: string) => {
   const parts = name.split(' ')
   if (parts.length <= 2) return name
+  if (parts[0].toLowerCase() === 'parking' && parts[1]?.toLowerCase() === 'lot') return `Lot ${parts[2] ?? ''}`.trim()
+  if (parts[1]?.toLowerCase() === 'stand') return `${parts[0]} Stand`
   if (parts[0].toLowerCase() === 'food' && parts[1]?.toLowerCase() === 'court') return `Food ${parts[2] ?? ''}`.trim()
   if (parts[0].toLowerCase() === 'emergency' && parts[1]?.toLowerCase() === 'exit') return `Exit ${parts[2] ?? ''}`.trim()
   return `${parts[0]} ${parts[1]}`
@@ -177,7 +179,7 @@ export const VenueMap = ({
     const scaleY = canvas.height / blueprint.height
 
     // Draw background
-    ctx.fillStyle = 'rgba(11, 19, 36, 0.5)'
+    ctx.fillStyle = 'rgba(45, 30, 20, 0.5)'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     drawStadiumBackdrop(ctx, canvas.width, canvas.height)
 
@@ -257,13 +259,13 @@ export const VenueMap = ({
       placedLabels.push(labelBox)
 
       drawRoundedRect(ctx, labelBox.left, labelBox.top, labelWidth, labelHeight, 6)
-      ctx.fillStyle = 'rgba(3, 7, 18, 0.56)'
+      ctx.fillStyle = 'rgba(38, 24, 15, 0.62)'
       ctx.fill()
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.24)'
       ctx.lineWidth = 1
       ctx.stroke()
 
-      ctx.fillStyle = '#f1f5f9'
+      ctx.fillStyle = '#fff7ed'
       ctx.font = `bold ${labelFontSize}px Inter`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -276,7 +278,7 @@ export const VenueMap = ({
           ? '#f87171'
           : occupancyPercent >= 60
             ? '#fbbf24'
-            : '#94a3b8'
+            : '#d6c2a3'
       ctx.fillText(occupancyText, centerX, centerY + (compactLabel ? 6 : 8))
     })
 
@@ -289,14 +291,14 @@ export const VenueMap = ({
         const y = feed.position.y * scaleY
 
         // Camera icon background
-        ctx.fillStyle = feed.status === 'active' ? 'rgba(56, 189, 248, 0.8)' : 'rgba(148, 163, 184, 0.5)'
+        ctx.fillStyle = feed.status === 'active' ? 'rgba(249, 115, 22, 0.82)' : 'rgba(148, 163, 184, 0.5)'
         ctx.beginPath()
         ctx.arc(x, y, 8, 0, Math.PI * 2)
         ctx.fill()
 
         // Camera pulse effect for active cameras
         if (feed.status === 'active') {
-          ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'
+          ctx.strokeStyle = 'rgba(249, 115, 22, 0.45)'
           ctx.lineWidth = 2
           ctx.beginPath()
           ctx.arc(x, y, 12, 0, Math.PI * 2)
@@ -317,7 +319,7 @@ export const VenueMap = ({
       const checkpoints = navigationRoute.checkpoints
 
       // Draw path line
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.82)'
       ctx.lineWidth = 4
       ctx.setLineDash([10, 5])
       ctx.beginPath()
@@ -349,7 +351,7 @@ export const VenueMap = ({
           ? 'rgba(34, 197, 94, 0.9)'
           : isPassed
           ? 'rgba(148, 163, 184, 0.6)'
-          : 'rgba(56, 189, 248, 0.8)'
+          : 'rgba(249, 115, 22, 0.82)'
         ctx.fill()
 
         ctx.strokeStyle = '#ffffff'
@@ -386,7 +388,7 @@ export const VenueMap = ({
           ctx.translate(arrowX, arrowY)
           ctx.rotate(angle)
 
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.9)'
+          ctx.fillStyle = 'rgba(249, 115, 22, 0.9)'
           ctx.beginPath()
           ctx.moveTo(10, 0)
           ctx.lineTo(0, -6)
@@ -465,10 +467,10 @@ export const VenueMap = ({
             top: 'var(--space-md)',
             right: 'var(--space-md)',
             padding: '8px 12px',
-            background: 'rgba(11, 19, 36, 0.9)',
+            background: 'rgba(43, 29, 19, 0.92)',
             backdropFilter: 'blur(10px)',
             borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
+            border: '1px solid rgba(249, 115, 22, 0.3)',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',

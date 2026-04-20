@@ -1,62 +1,62 @@
 /* ============================================
-  NavCrowd Design System — "Neon CyberStadium"
+  NavCrowd Design System — "Sunset Turf Arena"
   ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Teko:wght@400;500;600;700&display=swap');
 
 /* === CSS Variables === */
 :root {
   /* Dynamic Backgrounds */
-  --bg-primary: #030712;
-  --bg-secondary: #0b1120;
-  --bg-tertiary: #111827;
+  --bg-primary: #140f0b;
+  --bg-secondary: #211710;
+  --bg-tertiary: #2d2016;
   
-  /* Ultra-glass effects */
-  --bg-card: rgba(15, 23, 42, 0.4);
-  --bg-card-hover: rgba(30, 41, 59, 0.55);
-  --bg-glass: rgba(15, 23, 42, 0.2);
+  /* Warm glass effects */
+  --bg-card: rgba(50, 34, 23, 0.46);
+  --bg-card-hover: rgba(69, 45, 30, 0.62);
+  --bg-glass: rgba(50, 34, 23, 0.3);
 
-  /* Neon Accent Colors */
-  --accent-blue: #38bdf8;
-  --accent-blue-glow: rgba(56, 189, 248, 0.4);
-  --accent-cyan: #22d3ee;
-  --accent-cyan-glow: rgba(34, 211, 238, 0.4);
-  --accent-green: #34d399;
-  --accent-green-glow: rgba(52, 211, 153, 0.4);
-  --accent-amber: #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.4);
+  /* Accent Colors */
+  --accent-blue: #f97316;
+  --accent-blue-glow: rgba(249, 115, 22, 0.4);
+  --accent-cyan: #eab308;
+  --accent-cyan-glow: rgba(234, 179, 8, 0.36);
+  --accent-green: #65a30d;
+  --accent-green-glow: rgba(101, 163, 13, 0.36);
+  --accent-amber: #fb923c;
+  --accent-amber-glow: rgba(251, 146, 60, 0.36);
   --accent-red: #ef4444;
   --accent-red-glow: rgba(239, 68, 68, 0.4);
-  --accent-purple: #c084fc;
-  --accent-purple-glow: rgba(192, 132, 252, 0.4);
+  --accent-purple: #be185d;
+  --accent-purple-glow: rgba(190, 24, 93, 0.34);
 
   /* Vivid Gradients */
-  --gradient-primary: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
-  --gradient-success: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
-  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
-  --gradient-purple: linear-gradient(135deg, #c084fc 0%, #38bdf8 100%);
-  --gradient-royal: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
-  --gradient-warning: linear-gradient(120deg, #f59e0b 0%, #ef4444 100%);
-  --gradient-hero: radial-gradient(circle at center, #111827 0%, #030712 100%);
-  --gradient-card-border: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(34, 211, 238, 0.1), rgba(192, 132, 252, 0.5));
+  --gradient-primary: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+  --gradient-success: linear-gradient(135deg, #65a30d 0%, #16a34a 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #fb923c 100%);
+  --gradient-purple: linear-gradient(135deg, #be185d 0%, #f97316 100%);
+  --gradient-royal: linear-gradient(135deg, #65a30d 0%, #f97316 100%);
+  --gradient-warning: linear-gradient(120deg, #fbbf24 0%, #ef4444 100%);
+  --gradient-hero: radial-gradient(circle at center, #2f2117 0%, #140f0b 100%);
+  --gradient-card-border: linear-gradient(135deg, rgba(249, 115, 22, 0.55), rgba(234, 179, 8, 0.12), rgba(101, 163, 13, 0.48));
 
   /* Typography Colors */
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --text-accent: #38bdf8;
+  --text-primary: #fff7ed;
+  --text-secondary: #e7d8c4;
+  --text-muted: #b8a084;
+  --text-accent: #f97316;
 
   /* Thin Borders */
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-light: rgba(255, 255, 255, 0.12);
-  --border-neon-blue: rgba(56, 189, 248, 0.3);
+  --border-subtle: rgba(255, 240, 219, 0.08);
+  --border-light: rgba(255, 240, 219, 0.2);
+  --border-neon-blue: rgba(249, 115, 22, 0.34);
 
   /* Deep Shadows */
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
-  --shadow-glow-blue: 0 0 25px rgba(56, 189, 248, 0.35);
-  --shadow-glow-green: 0 0 25px rgba(52, 211, 153, 0.35);
+  --shadow-sm: 0 4px 12px rgba(14, 8, 4, 0.45);
+  --shadow-md: 0 8px 24px rgba(14, 8, 4, 0.58);
+  --shadow-lg: 0 16px 48px rgba(14, 8, 4, 0.66);
+  --shadow-glow-blue: 0 0 25px rgba(249, 115, 22, 0.38);
+  --shadow-glow-green: 0 0 25px rgba(101, 163, 13, 0.35);
   --shadow-glow-red: 0 0 25px rgba(248, 113, 113, 0.35);
 
   /* Spacing */
@@ -76,8 +76,8 @@
   --radius-full: 9999px;
 
   /* Fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Space Grotesk', 'JetBrains Mono', monospace;
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Teko', 'JetBrains Mono', monospace;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -146,7 +146,7 @@ button, input, select, textarea { font-family: var(--font-sans); border: none; o
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 2px 14px rgba(56, 189, 248, 0.4);
+  text-shadow: 0 2px 14px rgba(249, 115, 22, 0.4);
 }
 
 .text-gradient {
@@ -183,7 +183,7 @@ button, input, select, textarea { font-family: var(--font-sans); border: none; o
 }
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.6);
   filter: brightness(1.1);
 }
 .btn-secondary {
@@ -244,7 +244,7 @@ textarea:focus-visible,
 .input, .vf-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(48, 33, 22, 0.65);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -274,7 +274,7 @@ textarea:focus-visible,
 .badge-amber { background: rgba(251, 191, 36, 0.15); color: var(--accent-amber); border-color: rgba(251, 191, 36, 0.3); }
 .badge-red { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); border-color: rgba(248, 113, 113, 0.3); }
 .badge-purple { background: rgba(192, 132, 252, 0.15); color: var(--accent-purple); border-color: rgba(192, 132, 252, 0.3); }
-.badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.3); }
+.badge-blue { background: rgba(249, 115, 22, 0.15); color: var(--accent-blue); border-color: rgba(249, 115, 22, 0.3); }
 
 /* Heat Background Classes */
 .heat-bg-low { background: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.3); }
@@ -303,7 +303,7 @@ textarea:focus-visible,
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.05); } 100% { transform: scale(1); } }
-@keyframes pulseGlow { 0% { box-shadow: 0 0 10px var(--accent-blue-glow); } 50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.6); } 100% { box-shadow: 0 0 10px var(--accent-blue-glow); } }
+@keyframes pulseGlow { 0% { box-shadow: 0 0 10px var(--accent-blue-glow); } 50% { box-shadow: 0 0 25px rgba(249, 115, 22, 0.6); } 100% { box-shadow: 0 0 10px var(--accent-blue-glow); } }
 @keyframes live-pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -423,13 +423,13 @@ textarea:focus-visible,
 
 .tab:hover {
   color: var(--text-primary);
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: rgba(249, 115, 22, 0.45);
 }
 
 .tab.active {
   color: var(--text-primary);
-  border-color: rgba(56, 189, 248, 0.52);
-  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(249, 115, 22, 0.52);
+  background: rgba(249, 115, 22, 0.18);
   box-shadow: var(--shadow-glow-blue);
 }
 
@@ -499,7 +499,7 @@ textarea:focus-visible,
   gap: 0.6rem;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(43, 30, 20, 0.92);
   padding: 0.72rem 0.82rem;
   box-shadow: var(--shadow-lg);
 }
@@ -517,7 +517,7 @@ textarea:focus-visible,
 }
 
 .toast-info {
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: rgba(249, 115, 22, 0.45);
 }
 
 @keyframes slideInRight {
@@ -602,7 +602,7 @@ textarea:focus-visible,
   }
 
   50% {
-    box-shadow: 0 0 22px rgba(56, 189, 248, 0.58);
+    box-shadow: 0 0 22px rgba(249, 115, 22, 0.58);
   }
 
   100% {

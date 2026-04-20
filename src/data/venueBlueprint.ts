@@ -471,8 +471,8 @@ export const venuePaths: VenuePath[] = [
   { id: 'path-22', from: 'cp-concourse-s-center', to: 'cp-concourse-w-center', checkpoints: ['cp-concourse-s-center', 'cp-concourse-w-center'], distance: 300, estimatedTime: 9, crowdLevel: 'medium', accessible: true },
   { id: 'path-23', from: 'cp-concourse-w-center', to: 'cp-concourse-n-center', checkpoints: ['cp-concourse-w-center', 'cp-concourse-n-center'], distance: 280, estimatedTime: 8, crowdLevel: 'medium', accessible: true },
 
-  { id: 'path-24', from: 'cp-concourse-n-center', to: 'cp-concourse-s-center', checkpoints: ['cp-concourse-n-center', 'cp-concourse-s-center'], distance: 410, estimatedTime: 12, crowdLevel: 'medium', accessible: true },
-  { id: 'path-25', from: 'cp-concourse-e-center', to: 'cp-concourse-w-center', checkpoints: ['cp-concourse-e-center', 'cp-concourse-w-center'], distance: 430, estimatedTime: 13, crowdLevel: 'medium', accessible: true },
+  { id: 'path-24', from: 'cp-concourse-n-center', to: 'cp-concourse-s-center', checkpoints: ['cp-concourse-n-center', 'cp-concourse-s-center'], distance: 410, estimatedTime: 12, crowdLevel: 'high', accessible: false },
+  { id: 'path-25', from: 'cp-concourse-e-center', to: 'cp-concourse-w-center', checkpoints: ['cp-concourse-e-center', 'cp-concourse-w-center'], distance: 430, estimatedTime: 13, crowdLevel: 'high', accessible: false },
 
   { id: 'path-26', from: 'cp-seating-n', to: 'cp-seating-e', checkpoints: ['cp-seating-n', 'cp-seating-e'], distance: 260, estimatedTime: 8, crowdLevel: 'medium', accessible: true },
   { id: 'path-27', from: 'cp-seating-e', to: 'cp-seating-s', checkpoints: ['cp-seating-e', 'cp-seating-s'], distance: 250, estimatedTime: 8, crowdLevel: 'medium', accessible: true },
@@ -771,7 +771,7 @@ export const updateCrowdDataFromCCTV = (blueprint: VenueBlueprint): VenueBluepri
     feedByArea.set(feed.areaId, counts)
   })
 
-  const updatedAreas = blueprint.areas.map((area) => {
+  const updatedAreas: VenueArea[] = blueprint.areas.map((area): VenueArea => {
     const currentRatio = area.currentOccupancy / Math.max(1, area.capacity)
     const targetRatio = targetOccupancyByPhase[simulationPhase][area.type]
     const baselineTarget = area.capacity * targetRatio

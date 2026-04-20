@@ -2,7 +2,7 @@ import { ArrowRight, CheckCircle, MapPin, Navigation as NavigationIcon, Target, 
 import { useEffect, useMemo, useState } from 'react'
 import { VenueMap } from '../components/VenueMap'
 import { updateCrowdDataFromCCTV, venueBlueprint, venueCheckpoints } from '../data/venueBlueprint'
-import type { NavigationRoute, VenueBlueprint, VenueCheckpoint, VenuePath } from '../types/venue'
+import type { NavigationRoute, VenueBlueprint, VenueCheckpoint, VenuePath, VenuePoint } from '../types/venue'
 
 export const NavigationPage = () => {
   const [blueprint, setBlueprint] = useState<VenueBlueprint>(venueBlueprint)
@@ -125,7 +125,7 @@ export const NavigationPage = () => {
                 </button>
               </div>
               
-              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(56, 189, 248, 0.08)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-blue)' }}>
+              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(249, 115, 22, 0.09)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-blue)' }}>
                  <p style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-blue)', marginBottom: '4px' }}>
                     <ShieldAlert size={14} /> AI Guardian Active
                  </p>
@@ -154,7 +154,7 @@ export const NavigationPage = () => {
                   )}
 
                   {nextCheckpoint && (
-                    <div style={{ padding: '0.8rem', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: 'var(--radius-sm)', background: 'rgba(56, 189, 248, 0.05)' }}>
+                    <div style={{ padding: '0.8rem', border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: 'var(--radius-sm)', background: 'rgba(249, 115, 22, 0.06)' }}>
                       <p style={{ fontSize: '0.7rem', color: 'var(--accent-blue)', fontWeight: 700, letterSpacing: '1px' }}>HEADING TO</p>
                       <p style={{ fontSize: '1rem', fontWeight: 600 }}><ArrowRight size={16} style={{ display: 'inline', marginRight: '6px' }} />{nextCheckpoint.name}</p>
                     </div>
@@ -212,6 +212,7 @@ export const NavigationPage = () => {
 function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueBlueprint): { checkpoints: VenueCheckpoint[]; distance: number; estimatedTime: number } | null {
   const checkpointById = new Map(blueprint.checkpoints.map((checkpoint) => [checkpoint.id, checkpoint]))
   const areaById = new Map(blueprint.areas.map((area) => [area.id, area]))
+  const fieldArea = blueprint.areas.find((area) => area.type === 'field')
 
   type Edge = { to: string; weight: number; distance: number; estimatedTime: number }
   const graph = new Map<string, Edge[]>()
@@ -240,6 +241,16 @@ function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueB
     const seatingCrossPenalty = (fromArea?.type === 'seating' && toArea?.type === 'seating') ? 14 : 0
     const amenitiesQueuePenalty = (fromArea?.type === 'food' || toArea?.type === 'food' || fromArea?.type === 'restroom' || toArea?.type === 'restroom') && avgRatio > 0.66 ? 12 : 0
 
+    const segmentCrossesField = Boolean(
+      fieldArea &&
+      fromCheckpoint &&
+      toCheckpoint &&
+      fromArea?.type !== 'field' &&
+      toArea?.type !== 'field' &&
+      doesSegmentIntersectPolygon(fromCheckpoint.position, toCheckpoint.position, fieldArea.polygon)
+    )
+    const fieldCrossingPenalty = segmentCrossesField ? 240 : 0
+
     const incidentPenalty = blueprint.incident?.active &&
       (fromArea?.id === blueprint.incident.areaId || toArea?.id === blueprint.incident.areaId)
       ? 100
@@ -257,7 +268,7 @@ function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueB
       ? 18
       : 0
 
-    return pathCrowdBias + occupancyBias + incidentPenalty + emergencyTypePenalty + levelPenalty + gateBottleneckPenalty + seatingCrossPenalty + amenitiesQueuePenalty + concourseFlowBonus
+    return pathCrowdBias + occupancyBias + incidentPenalty + emergencyTypePenalty + levelPenalty + gateBottleneckPenalty + seatingCrossPenalty + amenitiesQueuePenalty + concourseFlowBonus + fieldCrossingPenalty
   }
 
   blueprint.paths.forEach((path) => {
@@ -347,4 +358,72 @@ function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueB
     distance: Math.max(totalDistance, 35),
     estimatedTime: Math.max(estimatedTime, 1)
   }
+}
+
+const getOrientation = (a: VenuePoint, b: VenuePoint, c: VenuePoint) => {
+  const value = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y)
+  if (Math.abs(value) < 0.0001) {
+    return 0
+  }
+  return value > 0 ? 1 : 2
+}
+
+const onSegment = (a: VenuePoint, b: VenuePoint, c: VenuePoint) => {
+  return (
+    b.x <= Math.max(a.x, c.x) &&
+    b.x >= Math.min(a.x, c.x) &&
+    b.y <= Math.max(a.y, c.y) &&
+    b.y >= Math.min(a.y, c.y)
+  )
+}
+
+const doSegmentsIntersect = (p1: VenuePoint, q1: VenuePoint, p2: VenuePoint, q2: VenuePoint) => {
+  const o1 = getOrientation(p1, q1, p2)
+  const o2 = getOrientation(p1, q1, q2)
+  const o3 = getOrientation(p2, q2, p1)
+  const o4 = getOrientation(p2, q2, q1)
+
+  if (o1 !== o2 && o3 !== o4) {
+    return true
+  }
+
+  if (o1 === 0 && onSegment(p1, p2, q1)) return true
+  if (o2 === 0 && onSegment(p1, q2, q1)) return true
+  if (o3 === 0 && onSegment(p2, p1, q2)) return true
+  if (o4 === 0 && onSegment(p2, q1, q2)) return true
+
+  return false
+}
+
+const isPointInPolygon = (point: VenuePoint, polygon: VenuePoint[]) => {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x
+    const yi = polygon[i].y
+    const xj = polygon[j].x
+    const yj = polygon[j].y
+
+    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi + 0.00001) + xi
+    if (intersects) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+const doesSegmentIntersectPolygon = (start: VenuePoint, end: VenuePoint, polygon: VenuePoint[]) => {
+  if (isPointInPolygon(start, polygon) || isPointInPolygon(end, polygon)) {
+    return true
+  }
+
+  for (let i = 0; i < polygon.length; i += 1) {
+    const nextIndex = (i + 1) % polygon.length
+    const p1 = polygon[i]
+    const p2 = polygon[nextIndex]
+    if (doSegmentsIntersect(start, end, p1, p2)) {
+      return true
+    }
+  }
+
+  return false
 }

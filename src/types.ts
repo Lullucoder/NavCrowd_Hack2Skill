@@ -129,3 +129,12 @@ export interface NavigationAssistResponse {
   }
   coordinationHint: string
 }
+
+export type SportType = 'Cricket' | 'Football'
+
+export interface UserTicketProfile {
+  name: string
+  ticketNumber: string
+  seatNumber: string
+  sport: SportType
+}
