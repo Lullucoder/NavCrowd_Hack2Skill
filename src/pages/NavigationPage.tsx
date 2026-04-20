@@ -2,7 +2,21 @@ import { ArrowRight, CheckCircle, MapPin, Navigation as NavigationIcon, Target, 
 import { useEffect, useMemo, useState } from 'react'
 import { VenueMap } from '../components/VenueMap'
 import { updateCrowdDataFromCCTV, venueBlueprint, venueCheckpoints } from '../data/venueBlueprint'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { NavigationRoute, VenueBlueprint, VenueCheckpoint, VenuePath, VenuePoint } from '../types/venue'
+
+interface GeocodeResponse {
+  source: 'google-maps' | 'fallback'
+  message?: string
+  result: {
+    formattedAddress: string
+    location: {
+      lat: number
+      lng: number
+    } | null
+    placeId: string | null
+  } | null
+}
 
 export const NavigationPage = () => {
   const [blueprint, setBlueprint] = useState<VenueBlueprint>(venueBlueprint)
@@ -11,6 +25,10 @@ export const NavigationPage = () => {
   const [activeRoute, setActiveRoute] = useState<NavigationRoute | null>(null)
   const [isNavigating, setIsNavigating] = useState(false)
   const [routeFeedback, setRouteFeedback] = useState('Pick your origin and destination, then build a route.')
+  const [geoAddress, setGeoAddress] = useState('Wankhede Stadium, Mumbai')
+  const [geoResult, setGeoResult] = useState<GeocodeResponse['result'] | null>(null)
+  const [geoStatus, setGeoStatus] = useState<string | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => setBlueprint((prev) => updateCrowdDataFromCCTV(prev)), 5000)
@@ -59,6 +77,60 @@ export const NavigationPage = () => {
 
   const currentCheckpoint = activeRoute?.checkpoints[activeRoute.currentCheckpointIndex]
   const nextCheckpoint = activeRoute?.checkpoints[activeRoute.currentCheckpointIndex + 1]
+  const geocodeVenuePin = geoResult?.location ? projectLatLngToVenuePoint(geoResult.location.lat, geoResult.location.lng, blueprint) : null
+
+  const handleGeocodeAddress = async () => {
+    const address = geoAddress.trim()
+    if (!address || isGeocoding) {
+      return
+    }
+
+    setIsGeocoding(true)
+    setGeoStatus(null)
+
+    try {
+      const response = await fetch('/api/google/maps/geocode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          address
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Geocode lookup unavailable')
+      }
+
+      const payload = (await response.json()) as GeocodeResponse
+      setGeoResult(payload.result)
+      setGeoStatus(payload.message ?? (payload.result ? 'Google Maps geocode response received.' : 'No location result found.'))
+
+      trackGoogleEvent('google_maps_geocode_lookup', {
+        source: payload.source,
+        hasResult: Boolean(payload.result)
+      })
+
+      void logGoogleAuditRecord('maps_events', {
+        eventType: 'geocode_lookup',
+        address,
+        source: payload.source,
+        hasResult: Boolean(payload.result),
+        placeId: payload.result?.placeId ?? null
+      })
+    } catch {
+      setGeoResult(null)
+      setGeoStatus('Unable to fetch Google Maps geocode response right now.')
+
+      trackGoogleEvent('google_maps_geocode_lookup', {
+        source: 'error',
+        hasResult: false
+      })
+    } finally {
+      setIsGeocoding(false)
+    }
+  }
 
   return (
     <div className="page-container animate-fadeIn">
@@ -93,6 +165,15 @@ export const NavigationPage = () => {
               showCCTV={true}
               navigationRoute={ activeRoute ? { checkpoints: activeRoute.checkpoints, currentIndex: activeRoute.currentCheckpointIndex } : undefined }
               showFullMap={true}
+              externalPin={
+                geocodeVenuePin
+                  ? {
+                      point: geocodeVenuePin,
+                      label: geoResult?.formattedAddress,
+                      source: 'Google Maps Geocode'
+                    }
+                  : undefined
+              }
             />
           </div>
         </section>
@@ -130,6 +211,27 @@ export const NavigationPage = () => {
                     <ShieldAlert size={14} /> AI Guardian Active
                  </p>
                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Routing weights automatically avoid dense or incident-prone segments where possible.</p>
+              </div>
+
+              <div style={{ marginTop: '0.9rem', display: 'grid', gap: '0.5rem' }}>
+                <p className="vf-section-label">Google Maps Geocode</p>
+                <input
+                  className="input"
+                  value={geoAddress}
+                  onChange={(event) => setGeoAddress(event.target.value)}
+                  placeholder="Enter venue or landmark"
+                />
+                <button className="btn btn-secondary" onClick={() => void handleGeocodeAddress()} disabled={isGeocoding}>
+                  {isGeocoding ? 'Locating...' : 'Locate with Google Maps'}
+                </button>
+
+                {geoStatus ? <p className="vf-muted">{geoStatus}</p> : null}
+                {geoResult?.location ? (
+                  <div className="vf-inline-note">
+                    <p><strong>{geoResult.formattedAddress}</strong></p>
+                    <p>Lat: {geoResult.location.lat.toFixed(5)} • Lng: {geoResult.location.lng.toFixed(5)}</p>
+                  </div>
+                ) : null}
               </div>
             </section>
           ) : (
@@ -426,4 +528,21 @@ const doesSegmentIntersectPolygon = (start: VenuePoint, end: VenuePoint, polygon
   }
 
   return false
+}
+
+const projectLatLngToVenuePoint = (lat: number, lng: number, blueprint: VenueBlueprint): VenuePoint => {
+  // Approximate projection around Wankhede Stadium; clamps into venue bounds for on-map pinning.
+  const stadiumLat = 18.9389
+  const stadiumLng = 72.8258
+  const latDelta = (lat - stadiumLat) * 1200
+  const lngDelta = (lng - stadiumLng) * 1200
+
+  const x = clamp(blueprint.width * 0.5 + lngDelta, 20, blueprint.width - 20)
+  const y = clamp(blueprint.height * 0.5 - latDelta, 20, blueprint.height - 20)
+
+  return { x, y }
+}
+
+const clamp = (value: number, min: number, max: number) => {
+  return Math.min(max, Math.max(min, value))
 }

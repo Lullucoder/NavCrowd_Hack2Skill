@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FoodMenu } from '../components/FoodMenu'
 import { menuSeed } from '../data/mockData'
-import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
+import { logGoogleAuditRecord, trackGoogleEvent, uploadGoogleStorageJsonRecord } from '../services/googleServices'
 import type { MenuItem } from '../types'
 
 type OrderState = 'idle' | 'processing' | 'preparing' | 'ready'
@@ -79,6 +79,8 @@ export const FoodOrderPage = () => {
   const [seatNumber, setSeatNumber] = useState(() => window.localStorage.getItem('navcrowd-seat-number') ?? 'B-127')
   const [seatError, setSeatError] = useState<string | null>(null)
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null)
+  const [storageSyncMessage, setStorageSyncMessage] = useState<string | null>(null)
+  const [storageReceiptUrl, setStorageReceiptUrl] = useState<string | null>(null)
 
   const normalizedSeatNumber = useMemo(() => normalizeSeatNumber(seatNumber), [seatNumber])
   const isSeatValid = useMemo(() => seatPattern.test(normalizedSeatNumber), [normalizedSeatNumber])
@@ -174,6 +176,8 @@ export const FoodOrderPage = () => {
     }
 
     setSeatError(null)
+    setStorageSyncMessage(null)
+    setStorageReceiptUrl(null)
 
     const totalSnapshot = finalTotal
     const itemCountSnapshot = totalItems
@@ -216,6 +220,33 @@ export const FoodOrderPage = () => {
         pickupEtaMinutes: pickupEtaSnapshot,
         paymentMode
       })
+
+      void (async () => {
+        const storageResult = await uploadGoogleStorageJsonRecord('food-orders', {
+          tokenNumber,
+          seatNumber: seatSnapshot,
+          verificationTag,
+          totalItems: itemCountSnapshot,
+          totalAmount: totalSnapshot,
+          pickupEtaMinutes: pickupEtaSnapshot,
+          paymentMode,
+          lineItems: cartLines.map((line) => ({
+            itemId: line.item.id,
+            itemName: line.item.name,
+            quantity: line.quantity,
+            unitPrice: line.item.price
+          })),
+          createdAt: new Date().toISOString()
+        })
+
+        setStorageSyncMessage(storageResult.detail)
+        setStorageReceiptUrl(storageResult.downloadUrl)
+
+        trackGoogleEvent('food_order_storage_sync', {
+          success: storageResult.ok,
+          hasUrl: Boolean(storageResult.downloadUrl)
+        })
+      })()
 
       setOrderState('preparing')
       setCartLines([])
@@ -390,6 +421,12 @@ export const FoodOrderPage = () => {
                 Ordered at {activeOrderTime} - Estimated pickup in {activeOrder.pickupEtaMinutes} min
               </p>
               <p className="vf-muted">Show this token at the counter to complete payment and collect your order.</p>
+              {storageSyncMessage ? <p className="vf-muted">Storage sync: {storageSyncMessage}</p> : null}
+              {storageReceiptUrl ? (
+                <p className="vf-muted">
+                  Cloud receipt: <a href={storageReceiptUrl} target="_blank" rel="noreferrer">Open stored JSON</a>
+                </p>
+              ) : null}
               {orderState === 'ready' ? (
                 <button className="btn btn-primary" onClick={handleNewOrder}>
                   Place Another Order

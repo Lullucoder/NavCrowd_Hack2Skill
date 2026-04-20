@@ -11,7 +11,10 @@ import { NavigationPage } from './pages/NavigationPage'
 import { ParkingPage } from './pages/ParkingPage'
 import { QueuePage } from './pages/QueuePage'
 import {
+  callGoogleOpsFunction,
+  initializeGoogleClientServices,
   logGoogleAuditRecord,
+  refreshGoogleRemoteConfig,
   signInWithGoogleAnonymousSession,
   trackGoogleEvent
 } from './services/googleServices'
@@ -155,6 +158,39 @@ function App() {
   const visibleSosAlert = activeSosAlert && activeSosAlert.id !== dismissedSosId ? activeSosAlert : null
 
   useEffect(() => {
+    if (!isAuthenticated || !session) {
+      return
+    }
+
+    void (async () => {
+      await initializeGoogleClientServices()
+
+      const authResult = await signInWithGoogleAnonymousSession()
+      const remoteConfigResult = await refreshGoogleRemoteConfig()
+      const functionResult = await callGoogleOpsFunction({
+        sourcePage: 'app-shell',
+        trigger: 'post-login-bootstrap'
+      })
+
+      trackGoogleEvent('google_service_bootstrap', {
+        authReady: authResult.ok,
+        remoteConfigReady: remoteConfigResult.ok,
+        functionReady: functionResult.ok,
+        sport: session.sport
+      })
+
+      await logGoogleAuditRecord('service_bootstrap_events', {
+        eventType: 'post_login_google_bootstrap',
+        seatNumber: session.seatNumber,
+        sport: session.sport,
+        authResult: authResult.detail,
+        remoteConfigResult: remoteConfigResult.detail,
+        functionResult: functionResult.detail
+      })
+    })()
+  }, [isAuthenticated, session])
+
+  useEffect(() => {
     if (!isAuthenticated) {
       setActiveSosAlert(null)
       return
@@ -207,10 +243,11 @@ function App() {
     setSession(normalizedProfile)
 
     void (async () => {
-      await signInWithGoogleAnonymousSession()
+      const authResult = await signInWithGoogleAnonymousSession()
       trackGoogleEvent('navcrowd_sign_in', {
         sport: normalizedProfile.sport,
-        seat: normalizedProfile.seatNumber
+        seat: normalizedProfile.seatNumber,
+        authReady: authResult.ok
       })
 
       await logGoogleAuditRecord('session_events', {
@@ -218,7 +255,8 @@ function App() {
         userName: normalizedProfile.name,
         ticketNumber: normalizedProfile.ticketNumber,
         seatNumber: normalizedProfile.seatNumber,
-        sport: normalizedProfile.sport
+        sport: normalizedProfile.sport,
+        authResult: authResult.detail
       })
     })()
   }

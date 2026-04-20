@@ -12,6 +12,11 @@ interface VenueMapProps {
     currentIndex: number
   }
   showFullMap?: boolean
+  externalPin?: {
+    point: { x: number; y: number }
+    label?: string
+    source?: string
+  }
 }
 
 const getAreaColor = (area: VenueArea, opacity = 0.3) => {
@@ -139,7 +144,8 @@ export const VenueMap = ({
   onAreaSelect,
   showCCTV = false,
   navigationRoute,
-  showFullMap = true
+  showFullMap = true,
+  externalPin
 }: VenueMapProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hoveredArea, setHoveredArea] = useState<string | null>(null)
@@ -400,7 +406,38 @@ export const VenueMap = ({
         }
       })
     }
-  }, [blueprint, selectedAreaId, hoveredArea, showCCTV, navigationRoute, showFullMap, canvasSize])
+
+    if (externalPin) {
+      const x = externalPin.point.x * scaleX
+      const y = externalPin.point.y * scaleY
+
+      ctx.save()
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(x, y, 18, 0, Math.PI * 2)
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(14, 116, 144, 0.95)'
+      ctx.beginPath()
+      ctx.arc(x, y - 8, 9, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.beginPath()
+      ctx.moveTo(x, y + 10)
+      ctx.lineTo(x - 7, y - 2)
+      ctx.lineTo(x + 7, y - 2)
+      ctx.closePath()
+      ctx.fill()
+
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.arc(x, y - 8, 3, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+    }
+  }, [blueprint, selectedAreaId, hoveredArea, showCCTV, navigationRoute, showFullMap, canvasSize, externalPin])
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onAreaSelect) return
@@ -507,6 +544,28 @@ export const VenueMap = ({
           <span>{blueprint.incident.guidance}</span>
         </div>
       )}
+
+      {externalPin ? (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 'var(--space-md)',
+            left: 'var(--space-md)',
+            maxWidth: isCompactCanvas ? '72%' : '340px',
+            padding: '8px 10px',
+            background: 'rgba(8, 47, 73, 0.78)',
+            border: '1px solid rgba(56, 189, 248, 0.42)',
+            borderRadius: 'var(--radius-md)',
+            color: '#e0f2fe',
+            fontSize: '0.72rem',
+            lineHeight: 1.35
+          }}
+        >
+          <strong style={{ display: 'block' }}>Pinned Location</strong>
+          <span>{externalPin.label ?? 'Google Maps lookup result'}</span>
+          {externalPin.source ? <span style={{ display: 'block', opacity: 0.85 }}>Source: {externalPin.source}</span> : null}
+        </div>
+      ) : null}
     </div>
   )
 }

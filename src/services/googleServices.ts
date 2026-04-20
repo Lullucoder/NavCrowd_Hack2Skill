@@ -54,6 +54,7 @@ let firestoreModuleRef: typeof import('firebase/firestore') | null = null
 let functionsModuleRef: typeof import('firebase/functions') | null = null
 let messagingModuleRef: typeof import('firebase/messaging') | null = null
 let remoteConfigModuleRef: typeof import('firebase/remote-config') | null = null
+let storageModuleRef: typeof import('firebase/storage') | null = null
 
 let appModulePromise: Promise<typeof import('firebase/app')> | null = null
 let analyticsModulePromise: Promise<typeof import('firebase/analytics')> | null = null
@@ -177,6 +178,7 @@ export const initializeGoogleClientServices = async () => {
 
   if (!firebaseStorage) {
     const storageModule = await loadStorageModule()
+    storageModuleRef = storageModule
     firebaseStorage = storageModule.getStorage(app)
   }
 
@@ -442,5 +444,53 @@ export const callGoogleOpsFunction = async (payload: Record<string, unknown> = {
     return { ok: true, detail: 'Callable function invocation attempted' }
   } catch {
     return { ok: false, detail: 'Callable function unavailable (deploy later)' }
+  }
+}
+
+export const uploadGoogleStorageJsonRecord = async (folder: string, payload: Record<string, unknown>) => {
+  if (!firebaseStorage) {
+    await initializeGoogleClientServices()
+  }
+
+  if (!firebaseStorage) {
+    return {
+      ok: false,
+      detail: 'Cloud Storage not configured',
+      objectPath: null as string | null,
+      downloadUrl: null as string | null
+    }
+  }
+
+  if (!storageModuleRef) {
+    storageModuleRef = await loadStorageModule()
+  }
+
+  const safeFolder = folder.replace(/^\/+|\/+$/g, '') || 'records'
+  const fileStamp = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const objectPath = `${safeFolder}/${fileStamp}.json`
+
+  try {
+    const jsonString = JSON.stringify(payload, null, 2)
+    const objectRef = storageModuleRef.ref(firebaseStorage, objectPath)
+
+    await storageModuleRef.uploadString(objectRef, jsonString, 'raw', {
+      contentType: 'application/json; charset=utf-8'
+    })
+
+    const downloadUrl = await storageModuleRef.getDownloadURL(objectRef)
+
+    return {
+      ok: true,
+      detail: 'JSON record uploaded to Cloud Storage',
+      objectPath,
+      downloadUrl
+    }
+  } catch {
+    return {
+      ok: false,
+      detail: 'Cloud Storage upload failed',
+      objectPath,
+      downloadUrl: null as string | null
+    }
   }
 }
