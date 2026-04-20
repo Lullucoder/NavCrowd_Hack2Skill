@@ -64,6 +64,9 @@ export const AdminDashboardPage = () => {
   const [pushStatusMessage, setPushStatusMessage] = useState<string | null>(null)
   const [remoteConfigMessage, setRemoteConfigMessage] = useState<string | null>(null)
   const [functionsMessage, setFunctionsMessage] = useState<string | null>(null)
+  const [clientSdkMessage, setClientSdkMessage] = useState<string | null>(null)
+  const [isClientSdkInitializing, setIsClientSdkInitializing] = useState(false)
+  const [hasAttemptedClientSdkInit, setHasAttemptedClientSdkInit] = useState(false)
 
   const attendance = useMemo(() => zones.reduce((sum, zone) => sum + zone.occupancy, 0), [zones])
   const averageWait = useMemo(
@@ -105,13 +108,6 @@ export const AdminDashboardPage = () => {
 
   useEffect(() => {
     void fetchGoogleStatus()
-  }, [])
-
-  useEffect(() => {
-    void (async () => {
-      await initializeGoogleClientServices()
-      setClientGoogleStatus(getGoogleClientServiceSnapshot())
-    })()
   }, [])
 
   useEffect(() => {
@@ -187,7 +183,30 @@ export const AdminDashboardPage = () => {
     }
   }
 
+  const ensureClientGoogleSdkReady = async () => {
+    if (hasAttemptedClientSdkInit || isClientSdkInitializing) {
+      return
+    }
+
+    setIsClientSdkInitializing(true)
+    setClientSdkMessage(null)
+
+    try {
+      await initializeGoogleClientServices()
+      setClientGoogleStatus(getGoogleClientServiceSnapshot())
+      setClientSdkMessage('Client Google SDK initialization attempted. Configure VITE_FIREBASE_* env values for full activation.')
+      setHasAttemptedClientSdkInit(true)
+    } catch {
+      setClientSdkMessage('Client Google SDK initialization failed. Check Firebase env values and try again.')
+      setHasAttemptedClientSdkInit(false)
+    } finally {
+      setIsClientSdkInitializing(false)
+    }
+  }
+
   const handleEnablePush = async () => {
+    await ensureClientGoogleSdkReady()
+
     const result = await requestGooglePushToken()
     setPushStatusMessage(result.detail)
     trackGoogleEvent('google_push_token_attempt', {
@@ -198,6 +217,8 @@ export const AdminDashboardPage = () => {
   }
 
   const handleRefreshRemoteConfig = async () => {
+    await ensureClientGoogleSdkReady()
+
     const result = await refreshGoogleRemoteConfig()
     setRemoteConfigMessage(result.detail)
     trackGoogleEvent('google_remote_config_refresh', {
@@ -207,6 +228,8 @@ export const AdminDashboardPage = () => {
   }
 
   const handleCallablePing = async () => {
+    await ensureClientGoogleSdkReady()
+
     const result = await callGoogleOpsFunction({
       sourcePage: 'admin-dashboard'
     })
@@ -285,6 +308,16 @@ export const AdminDashboardPage = () => {
         </p>
 
         <div className="vf-admin-actions">
+          <button
+            className="btn btn-secondary"
+            onClick={() => void ensureClientGoogleSdkReady()}
+            disabled={isClientSdkInitializing || hasAttemptedClientSdkInit}
+          >
+            {isClientSdkInitializing ? 'Initializing Client SDK...' : hasAttemptedClientSdkInit ? 'Client SDK Initialized' : 'Initialize Client Google SDK'}
+          </button>
+        </div>
+
+        <div className="vf-admin-actions">
           <button className="btn btn-secondary" onClick={() => void handleEnablePush()}>
             Enable Push Token (FCM)
           </button>
@@ -299,6 +332,7 @@ export const AdminDashboardPage = () => {
         {pushStatusMessage ? <p className="vf-muted">Push: {pushStatusMessage}</p> : null}
         {remoteConfigMessage ? <p className="vf-muted">Remote Config: {remoteConfigMessage}</p> : null}
         {functionsMessage ? <p className="vf-muted">Cloud Function: {functionsMessage}</p> : null}
+        {clientSdkMessage ? <p className="vf-muted">Client SDK: {clientSdkMessage}</p> : null}
 
         {googleStatusError ? <p className="vf-muted">{googleStatusError}</p> : null}
       </section>

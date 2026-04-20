@@ -11,7 +11,6 @@ import { NavigationPage } from './pages/NavigationPage'
 import { ParkingPage } from './pages/ParkingPage'
 import { QueuePage } from './pages/QueuePage'
 import {
-  initializeGoogleClientServices,
   logGoogleAuditRecord,
   signInWithGoogleAnonymousSession,
   trackGoogleEvent
@@ -154,10 +153,6 @@ function App() {
   const [dismissedSosId, setDismissedSosId] = useState<string | null>(null)
   const isAuthenticated = Boolean(session)
   const visibleSosAlert = activeSosAlert && activeSosAlert.id !== dismissedSosId ? activeSosAlert : null
-
-  useEffect(() => {
-    void initializeGoogleClientServices()
-  }, [])
 
   useEffect(() => {
     if (!isAuthenticated) {
