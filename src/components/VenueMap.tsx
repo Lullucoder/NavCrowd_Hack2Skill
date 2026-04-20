@@ -14,8 +14,12 @@ interface VenueMapProps {
   showFullMap?: boolean
 }
 
-const getAreaColor = (level: VenueArea['level'], opacity = 0.3) => {
-  switch (level) {
+const getAreaColor = (area: VenueArea, opacity = 0.3) => {
+  if (area.type === 'field') {
+    return `rgba(22, 163, 74, ${Math.max(0.22, opacity * 0.9)})`
+  }
+
+  switch (area.level) {
     case 'low':
       return `rgba(52, 211, 153, ${opacity})`
     case 'medium':
@@ -27,8 +31,12 @@ const getAreaColor = (level: VenueArea['level'], opacity = 0.3) => {
   }
 }
 
-const getAreaStrokeColor = (level: VenueArea['level']) => {
-  switch (level) {
+const getAreaStrokeColor = (area: VenueArea) => {
+  if (area.type === 'field') {
+    return '#16a34a'
+  }
+
+  switch (area.level) {
     case 'low':
       return '#34d399'
     case 'medium':
@@ -64,6 +72,55 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
   ctx.lineTo(x, y + r)
   ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
+}
+
+const drawStadiumBackdrop = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  const centerX = width / 2
+  const centerY = height / 2
+  const outerX = width * 0.43
+  const outerY = height * 0.37
+  const innerX = width * 0.34
+  const innerY = height * 0.28
+
+  const bowlGradient = ctx.createRadialGradient(centerX, centerY, width * 0.08, centerX, centerY, width * 0.55)
+  bowlGradient.addColorStop(0, 'rgba(30, 41, 59, 0.62)')
+  bowlGradient.addColorStop(1, 'rgba(15, 23, 42, 0.08)')
+
+  ctx.save()
+  ctx.fillStyle = bowlGradient
+  ctx.beginPath()
+  ctx.ellipse(centerX, centerY, outerX, outerY, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.ellipse(centerX, centerY, outerX, outerY, 0, 0, Math.PI * 2)
+  ctx.stroke()
+
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.62)'
+  ctx.beginPath()
+  ctx.ellipse(centerX, centerY, innerX, innerY, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(22, 163, 74, 0.18)'
+  ctx.beginPath()
+  ctx.ellipse(centerX, centerY, width * 0.2, height * 0.15, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.strokeStyle = 'rgba(134, 239, 172, 0.45)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.ellipse(centerX, centerY, width * 0.2, height * 0.15, 0, 0, Math.PI * 2)
+  ctx.stroke()
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(centerX - width * 0.2, centerY)
+  ctx.lineTo(centerX + width * 0.2, centerY)
+  ctx.stroke()
+  ctx.restore()
 }
 
 const compactAreaLabel = (name: string) => {
@@ -122,6 +179,7 @@ export const VenueMap = ({
     // Draw background
     ctx.fillStyle = 'rgba(11, 19, 36, 0.5)'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+    drawStadiumBackdrop(ctx, canvas.width, canvas.height)
 
     // Filter areas if not showing full map
     const areasToShow = showFullMap
@@ -149,12 +207,14 @@ export const VenueMap = ({
       })
       ctx.closePath()
 
+      const baseOpacity = area.type === 'field' ? 0.42 : area.type === 'concourse' ? 0.24 : area.type === 'seating' ? 0.2 : 0.28
+
       // Fill
-      ctx.fillStyle = getAreaColor(area.level, isSelected ? 0.5 : isHovered ? 0.4 : 0.3)
+      ctx.fillStyle = getAreaColor(area, isSelected ? baseOpacity + 0.18 : isHovered ? baseOpacity + 0.08 : baseOpacity)
       ctx.fill()
 
       // Stroke
-      ctx.strokeStyle = getAreaStrokeColor(area.level)
+      ctx.strokeStyle = getAreaStrokeColor(area)
       ctx.lineWidth = isSelected ? 3 : isHovered ? 2 : 1
       ctx.stroke()
 
@@ -169,9 +229,11 @@ export const VenueMap = ({
 
       const compactLabel = isCompactCanvas || polygonWidth < 130 || polygonHeight < 68
       const areaName = compactLabel ? compactAreaLabel(area.name) : area.name
-      const occupancyText = compactLabel
-        ? `${occupancyPercent}%`
-        : `${occupancyPercent}% (${area.currentOccupancy}/${area.capacity})`
+      const occupancyText = area.type === 'field'
+        ? 'Restricted area'
+        : compactLabel
+          ? `${occupancyPercent}%`
+          : `${occupancyPercent}% (${area.currentOccupancy}/${area.capacity})`
 
       ctx.font = `bold ${labelFontSize}px Inter`
       const areaNameWidth = ctx.measureText(areaName).width
@@ -208,7 +270,13 @@ export const VenueMap = ({
       ctx.fillText(areaName, centerX, centerY - (compactLabel ? 4 : 6))
 
       ctx.font = `${metricFontSize}px Inter`
-      ctx.fillStyle = occupancyPercent >= 80 ? '#f87171' : occupancyPercent >= 60 ? '#fbbf24' : '#94a3b8'
+      ctx.fillStyle = area.type === 'field'
+        ? '#86efac'
+        : occupancyPercent >= 80
+          ? '#f87171'
+          : occupancyPercent >= 60
+            ? '#fbbf24'
+            : '#94a3b8'
       ctx.fillText(occupancyText, centerX, centerY + (compactLabel ? 6 : 8))
     })
 

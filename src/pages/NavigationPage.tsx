@@ -235,6 +235,11 @@ function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueB
     const pathCrowdBias = path.crowdLevel === 'high' ? 32 : path.crowdLevel === 'medium' ? 16 : 4
     const occupancyBias = avgRatio * 42
 
+    const concourseFlowBonus = (fromArea?.type === 'concourse' && toArea?.type === 'concourse') ? -10 : 0
+    const gateBottleneckPenalty = (fromArea?.type === 'gate' || toArea?.type === 'gate') && avgRatio > 0.62 ? 24 : 0
+    const seatingCrossPenalty = (fromArea?.type === 'seating' && toArea?.type === 'seating') ? 14 : 0
+    const amenitiesQueuePenalty = (fromArea?.type === 'food' || toArea?.type === 'food' || fromArea?.type === 'restroom' || toArea?.type === 'restroom') && avgRatio > 0.66 ? 12 : 0
+
     const incidentPenalty = blueprint.incident?.active &&
       (fromArea?.id === blueprint.incident.areaId || toArea?.id === blueprint.incident.areaId)
       ? 100
@@ -252,7 +257,7 @@ function findRoute(from: VenueCheckpoint, to: VenueCheckpoint, blueprint: VenueB
       ? 18
       : 0
 
-    return pathCrowdBias + occupancyBias + incidentPenalty + emergencyTypePenalty + levelPenalty
+    return pathCrowdBias + occupancyBias + incidentPenalty + emergencyTypePenalty + levelPenalty + gateBottleneckPenalty + seatingCrossPenalty + amenitiesQueuePenalty + concourseFlowBonus
   }
 
   blueprint.paths.forEach((path) => {

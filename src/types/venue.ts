@@ -6,7 +6,7 @@ export interface VenuePoint {
 export interface VenueArea {
   id: string
   name: string
-  type: 'gate' | 'concourse' | 'seating' | 'food' | 'restroom' | 'parking' | 'emergency'
+  type: 'gate' | 'concourse' | 'seating' | 'food' | 'restroom' | 'parking' | 'emergency' | 'field'
   polygon: VenuePoint[]
   capacity: number
   currentOccupancy: number
