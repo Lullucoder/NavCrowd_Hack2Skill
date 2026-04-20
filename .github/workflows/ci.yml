@@ -1,0 +1,34 @@
+name: Verify NavCrowd
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm --prefix backend ci
+
+      - name: Run tests and build
+        run: npm run verify
+
+      - name: Enforce repository tracked size limit
+        run: |
+          node -e "const cp=require('node:child_process'); const fs=require('node:fs'); const files=cp.execSync('git ls-files',{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean); const total=files.reduce((sum,f)=>sum+fs.statSync(f).size,0); const limit=1024*1024; console.log('TrackedBytes='+total); if(total>limit){console.error('Tracked repository size exceeds 1 MB limit'); process.exit(1);}"
