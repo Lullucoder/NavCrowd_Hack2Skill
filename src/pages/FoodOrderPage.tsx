@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FoodMenu } from '../components/FoodMenu'
 import { menuSeed } from '../data/mockData'
 import type { MenuItem } from '../types'
@@ -14,6 +14,8 @@ interface CartLine {
 interface ActiveOrder {
   tokenNumber: string
   counterName: string
+  seatNumber: string
+  verificationTag: string
   totalAmount: number
   totalItems: number
   pickupEtaMinutes: number
@@ -27,10 +29,45 @@ const stallNameById: Record<string, string> = {
   'f-02': 'Masala Wrap Point Counter'
 }
 
-const buildTokenNumber = () => {
-  const segmentA = Math.floor(100 + Math.random() * 900)
+const seatPattern = /^[A-P]{1,2}-\d{1,3}$/
+
+const normalizeSeatNumber = (value: string) => value.replace(/\s+/g, '').toUpperCase()
+
+const getSeatZone = (seatNumber: string): 'north' | 'east' | 'south' | 'west' => {
+  const standCode = seatNumber.split('-')[0] || 'B'
+
+  if (['A', 'B', 'C', 'D'].includes(standCode)) {
+    return 'north'
+  }
+  if (['E', 'F', 'G', 'H'].includes(standCode)) {
+    return 'east'
+  }
+  if (['I', 'J', 'K', 'L'].includes(standCode)) {
+    return 'south'
+  }
+  return 'west'
+}
+
+const getPickupCounter = (stallId: string, seatNumber: string) => {
+  const seatZone = getSeatZone(seatNumber)
+
+  if (stallId === 'f-01') {
+    if (seatZone === 'north' || seatZone === 'west') {
+      return 'Smash Express Counter N2'
+    }
+    return 'Smash Express Counter S5'
+  }
+
+  if (seatZone === 'east' || seatZone === 'south') {
+    return 'Wrap Hub Counter E3'
+  }
+  return 'Wrap Hub Counter W1'
+}
+
+const buildTokenNumber = (seatNumber: string) => {
+  const seatTag = seatNumber.replace('-', '').slice(0, 4)
   const segmentB = Math.floor(1000 + Math.random() * 9000)
-  return `FO-${segmentA}-${segmentB}`
+  return `FO-${seatTag}-${segmentB}`
 }
 
 export const FoodOrderPage = () => {
@@ -38,7 +75,12 @@ export const FoodOrderPage = () => {
   const [cartLines, setCartLines] = useState<CartLine[]>([])
   const [orderState, setOrderState] = useState<OrderState>('idle')
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('counter')
+  const [seatNumber, setSeatNumber] = useState(() => window.localStorage.getItem('navcrowd-seat-number') ?? 'B-127')
+  const [seatError, setSeatError] = useState<string | null>(null)
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null)
+
+  const normalizedSeatNumber = useMemo(() => normalizeSeatNumber(seatNumber), [seatNumber])
+  const isSeatValid = useMemo(() => seatPattern.test(normalizedSeatNumber), [normalizedSeatNumber])
 
   const visibleItems = useMemo(
     () => (category === 'All' ? menuSeed : menuSeed.filter((item) => item.category === category)),
@@ -85,6 +127,10 @@ export const FoodOrderPage = () => {
           ? 'Preparing order'
           : 'Ready for pickup'
 
+  useEffect(() => {
+    window.localStorage.setItem('navcrowd-seat-number', normalizedSeatNumber)
+  }, [normalizedSeatNumber])
+
   const addToCart = (item: MenuItem) => {
     setCartLines((prev) => {
       const existingIndex = prev.findIndex((line) => line.item.id === item.id)
@@ -121,18 +167,30 @@ export const FoodOrderPage = () => {
       return
     }
 
+    if (!isSeatValid) {
+      setSeatError('Enter a valid seat number like B-127 or H-208 to verify pickup.')
+      return
+    }
+
+    setSeatError(null)
+
     const totalSnapshot = finalTotal
     const itemCountSnapshot = totalItems
     const pickupEtaSnapshot = Math.max(pickupEta, 6)
+    const seatSnapshot = normalizedSeatNumber
     const dominantLine = [...cartLines].sort((a, b) => b.quantity - a.quantity)[0]
-    const counterName = stallNameById[dominantLine.item.stallId] ?? 'Main Food Court Counter'
+    const counterName = getPickupCounter(dominantLine.item.stallId, seatSnapshot)
+    const fallbackCounter = stallNameById[dominantLine.item.stallId] ?? 'Main Food Court Counter'
+    const verificationTag = `${seatSnapshot}-${Math.floor(Math.random() * 900 + 100)}`
 
     setOrderState('processing')
 
     window.setTimeout(() => {
       setActiveOrder({
-        tokenNumber: buildTokenNumber(),
-        counterName,
+        tokenNumber: buildTokenNumber(seatSnapshot),
+        counterName: counterName || fallbackCounter,
+        seatNumber: seatSnapshot,
+        verificationTag,
         totalAmount: totalSnapshot,
         totalItems: itemCountSnapshot,
         pickupEtaMinutes: pickupEtaSnapshot,
@@ -159,6 +217,7 @@ export const FoodOrderPage = () => {
     setOrderState('idle')
     setActiveOrder(null)
     setPaymentMode('counter')
+    setSeatError(null)
   }
 
   return (
@@ -233,6 +292,32 @@ export const FoodOrderPage = () => {
             </p>
           </div>
 
+          <div className="vf-food-seat-verify">
+            <label htmlFor="food-seat-number">Seat Number for Pickup Verification</label>
+            <input
+              id="food-seat-number"
+              className="input"
+              value={seatNumber}
+              onChange={(event) => setSeatNumber(event.target.value.toUpperCase())}
+              onBlur={() => {
+                const normalized = normalizeSeatNumber(seatNumber)
+                setSeatNumber(normalized)
+                if (normalized && !seatPattern.test(normalized)) {
+                  setSeatError('Use format like B-127, E-44, or P-312.')
+                } else {
+                  setSeatError(null)
+                }
+              }}
+              placeholder="B-127"
+              autoComplete="off"
+              aria-describedby="food-seat-help"
+            />
+            <p id="food-seat-help" className="vf-muted">
+              Seat ID is printed on your ticket and used by counter staff to verify handoff.
+            </p>
+            {seatError ? <p className="vf-nav-fallback-note">{seatError}</p> : null}
+          </div>
+
           <div className="vf-food-payment-panel">
             <p className="vf-section-label">Checkout Options</p>
             <div className="vf-food-payment-tabs">
@@ -259,7 +344,7 @@ export const FoodOrderPage = () => {
           <button
             className="btn btn-success"
             onClick={checkoutOrder}
-            disabled={cartLines.length === 0 || paymentMode !== 'counter' || orderState === 'processing'}
+            disabled={cartLines.length === 0 || paymentMode !== 'counter' || orderState === 'processing' || !isSeatValid}
           >
             {orderState === 'processing' ? 'Generating token...' : 'Checkout & Generate Token'}
           </button>
@@ -273,6 +358,9 @@ export const FoodOrderPage = () => {
               <h4>Token #{activeOrder.tokenNumber}</h4>
               <p>
                 Pickup counter: <strong>{activeOrder.counterName}</strong>
+              </p>
+              <p>
+                Verified seat: <strong>{activeOrder.seatNumber}</strong> - Verification code: <strong>{activeOrder.verificationTag}</strong>
               </p>
               <p>
                 Items: <strong>{activeOrder.totalItems}</strong> - Payable amount: <strong>Rs {activeOrder.totalAmount}</strong>

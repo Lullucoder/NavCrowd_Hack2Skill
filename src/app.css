@@ -131,6 +131,20 @@
 .vf-icon-btn {
   width: 36px;
   height: 36px;
+  color: var(--text-primary);
+  background: rgba(15, 23, 42, 0.52);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.vf-icon-btn svg {
+  display: block;
+  stroke-width: 2.15;
+}
+
+.vf-icon-btn:hover {
+  color: var(--accent-blue);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
 }
 
 .vf-user-pill {
@@ -689,6 +703,23 @@
 .vf-food-payment-panel {
   display: grid;
   gap: 0.55rem;
+}
+
+.vf-food-seat-verify {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.vf-food-seat-verify label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.vf-food-seat-verify .input {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
 }
 
 .vf-food-payment-tabs {
