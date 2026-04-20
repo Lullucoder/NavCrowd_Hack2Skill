@@ -1,5 +1,6 @@
 import { BrainCircuit, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { MlInsightsResponse } from '../types'
 
 type Intent = 'quick' | 'merch' | 'comfort'
@@ -50,8 +51,39 @@ export const AiInsightsPanel = () => {
 
       const payload = (await response.json()) as MlInsightsResponse
       setInsights(payload)
+
+      trackGoogleEvent('ml_insights_generated', {
+        intent,
+        mobilityNeed,
+        firstVisit,
+        crowdRiskLevel: payload.predictions.crowdRiskLevel
+      })
+
+      void logGoogleAuditRecord('ml_insights_events', {
+        eventType: 'insights_generated',
+        seat,
+        intent,
+        mobilityNeed,
+        firstVisit,
+        crowdRiskLevel: payload.predictions.crowdRiskLevel,
+        expectedQueueWaitMinutes: payload.predictions.expectedQueueWaitMinutes
+      })
     } catch {
       setError('Could not fetch AI insights from backend. Start backend server to enable this panel.')
+
+      trackGoogleEvent('ml_insights_failed', {
+        intent,
+        mobilityNeed,
+        firstVisit
+      })
+
+      void logGoogleAuditRecord('ml_insights_events', {
+        eventType: 'insights_failed',
+        seat,
+        intent,
+        mobilityNeed,
+        firstVisit
+      })
     } finally {
       setIsLoading(false)
     }

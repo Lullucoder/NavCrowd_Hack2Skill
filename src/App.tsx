@@ -10,6 +10,12 @@ import { LandingPage } from './pages/LandingPage'
 import { NavigationPage } from './pages/NavigationPage'
 import { ParkingPage } from './pages/ParkingPage'
 import { QueuePage } from './pages/QueuePage'
+import {
+  initializeGoogleClientServices,
+  logGoogleAuditRecord,
+  signInWithGoogleAnonymousSession,
+  trackGoogleEvent
+} from './services/googleServices'
 import type { AlertItem, SportType, UserTicketProfile } from './types'
 
 const storageKey = 'navcrowd-auth-session'
@@ -150,6 +156,10 @@ function App() {
   const visibleSosAlert = activeSosAlert && activeSosAlert.id !== dismissedSosId ? activeSosAlert : null
 
   useEffect(() => {
+    void initializeGoogleClientServices()
+  }, [])
+
+  useEffect(() => {
     if (!isAuthenticated) {
       setActiveSosAlert(null)
       return
@@ -200,9 +210,37 @@ function App() {
     window.localStorage.setItem(seatStorageKey, normalizedProfile.seatNumber)
     window.localStorage.removeItem(legacyStorageKey)
     setSession(normalizedProfile)
+
+    void (async () => {
+      await signInWithGoogleAnonymousSession()
+      trackGoogleEvent('navcrowd_sign_in', {
+        sport: normalizedProfile.sport,
+        seat: normalizedProfile.seatNumber
+      })
+
+      await logGoogleAuditRecord('session_events', {
+        eventType: 'sign_in',
+        userName: normalizedProfile.name,
+        ticketNumber: normalizedProfile.ticketNumber,
+        seatNumber: normalizedProfile.seatNumber,
+        sport: normalizedProfile.sport
+      })
+    })()
   }
 
   const handleLogout = () => {
+    if (session) {
+      trackGoogleEvent('navcrowd_logout', {
+        sport: session.sport
+      })
+      void logGoogleAuditRecord('session_events', {
+        eventType: 'logout',
+        userName: session.name,
+        seatNumber: session.seatNumber,
+        sport: session.sport
+      })
+    }
+
     window.localStorage.removeItem(storageKey)
     window.localStorage.removeItem(legacyStorageKey)
     setActiveSosAlert(null)

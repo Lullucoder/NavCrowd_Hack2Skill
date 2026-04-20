@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FoodMenu } from '../components/FoodMenu'
 import { menuSeed } from '../data/mockData'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { MenuItem } from '../types'
 
 type OrderState = 'idle' | 'processing' | 'preparing' | 'ready'
@@ -186,8 +187,10 @@ export const FoodOrderPage = () => {
     setOrderState('processing')
 
     window.setTimeout(() => {
+      const tokenNumber = buildTokenNumber(seatSnapshot)
+
       setActiveOrder({
-        tokenNumber: buildTokenNumber(seatSnapshot),
+        tokenNumber,
         counterName: counterName || fallbackCounter,
         seatNumber: seatSnapshot,
         verificationTag,
@@ -196,6 +199,24 @@ export const FoodOrderPage = () => {
         pickupEtaMinutes: pickupEtaSnapshot,
         createdAt: new Date().toISOString()
       })
+
+      trackGoogleEvent('food_checkout_token_generated', {
+        paymentMode,
+        totalItems: itemCountSnapshot,
+        totalAmount: totalSnapshot,
+        seat: seatSnapshot
+      })
+
+      void logGoogleAuditRecord('food_orders', {
+        eventType: 'checkout_token_generated',
+        seatNumber: seatSnapshot,
+        tokenNumber,
+        totalItems: itemCountSnapshot,
+        totalAmount: totalSnapshot,
+        pickupEtaMinutes: pickupEtaSnapshot,
+        paymentMode
+      })
+
       setOrderState('preparing')
       setCartLines([])
     }, 1200)

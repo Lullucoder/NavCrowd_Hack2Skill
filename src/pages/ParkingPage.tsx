@@ -2,6 +2,7 @@ import { CarFront, Gauge, MapPin, Navigation as NavigationIcon, ParkingCircle, S
 import { useEffect, useMemo, useState } from 'react'
 import { ParkingCard } from '../components/ParkingCard'
 import { parkingSeed } from '../data/mockData'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { ParkingZone } from '../types'
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
@@ -116,6 +117,20 @@ export const ParkingPage = () => {
     setRerouteMessage(
       `Reroute engaged: ${bestRerouteZone.name} selected with ${bestRerouteZone.availableSpots} free spots and ${bestRerouteZone.walkMinutes} min walk.`
     )
+
+    trackGoogleEvent('parking_reroute_engaged', {
+      targetZone: bestRerouteZone.id,
+      availableSpots: bestRerouteZone.availableSpots,
+      walkMinutes: bestRerouteZone.walkMinutes
+    })
+
+    void logGoogleAuditRecord('parking_events', {
+      eventType: 'reroute_engaged',
+      zoneId: bestRerouteZone.id,
+      zoneName: bestRerouteZone.name,
+      availableSpots: bestRerouteZone.availableSpots,
+      walkMinutes: bestRerouteZone.walkMinutes
+    })
   }
 
   const handleSelectZone = (zoneId: string) => {
@@ -126,6 +141,19 @@ export const ParkingPage = () => {
   const handleUseSuggestedSpot = () => {
     if (selectedZone && selectedNextSpot) {
       setRerouteMessage(`Next spot assigned: ${selectedNextSpot} in ${selectedZone.name}. Enter via ${selectedZone.recommendedGate}.`)
+
+      trackGoogleEvent('parking_spot_assigned', {
+        zoneId: selectedZone.id,
+        spotCode: selectedNextSpot
+      })
+
+      void logGoogleAuditRecord('parking_events', {
+        eventType: 'spot_assigned',
+        zoneId: selectedZone.id,
+        zoneName: selectedZone.name,
+        spotCode: selectedNextSpot,
+        gate: selectedZone.recommendedGate
+      })
       return
     }
 
@@ -135,6 +163,19 @@ export const ParkingPage = () => {
       setRerouteMessage(
         `Selected zone is full. Redirected to ${fallbackZone.name}${fallbackSpot ? ` • next spot ${fallbackSpot}` : ''}.`
       )
+
+      trackGoogleEvent('parking_zone_fallback', {
+        targetZone: fallbackZone.id,
+        spotCode: fallbackSpot ?? 'none'
+      })
+
+      void logGoogleAuditRecord('parking_events', {
+        eventType: 'zone_fallback',
+        zoneId: fallbackZone.id,
+        zoneName: fallbackZone.name,
+        spotCode: fallbackSpot,
+        availableSpots: fallbackZone.availableSpots
+      })
       return
     }
 

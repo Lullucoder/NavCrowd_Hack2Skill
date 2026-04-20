@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertBanner } from '../components/AlertBanner'
 import { EmergencyPanel } from '../components/EmergencyPanel'
 import { alertSeed } from '../data/mockData'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { AlertItem } from '../types'
 
 interface EmergencyPageProps {
@@ -97,9 +98,33 @@ export const EmergencyPage = ({ onSosBroadcast }: EmergencyPageProps) => {
       const persistedAlert = (await response.json()) as AlertItem
       setAlerts((current) => [persistedAlert, ...current.filter((alert) => alert.id !== persistedAlert.id)])
       onSosBroadcast?.(persistedAlert)
+
+      trackGoogleEvent('navcrowd_sos_triggered', {
+        seat,
+        channel: 'api'
+      })
+
+      void logGoogleAuditRecord('emergency_events', {
+        eventType: 'sos_triggered',
+        seat,
+        alertId: persistedAlert.id,
+        severity: persistedAlert.severity
+      })
     } catch {
       setAlerts((current) => [fallbackAlert, ...current])
       onSosBroadcast?.(fallbackAlert)
+
+      trackGoogleEvent('navcrowd_sos_triggered', {
+        seat,
+        channel: 'fallback'
+      })
+
+      void logGoogleAuditRecord('emergency_events', {
+        eventType: 'sos_triggered_fallback',
+        seat,
+        alertId: fallbackAlert.id,
+        severity: fallbackAlert.severity
+      })
     } finally {
       setIsTriggeringSos(false)
     }

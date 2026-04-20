@@ -2,6 +2,7 @@ import { Bot, SendHorizonal, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { InlineLoader } from './LoadingStates'
 import { venueAssistantFallback } from '../data/mockData'
+import { logGoogleAuditRecord, trackGoogleEvent } from '../services/googleServices'
 import type { ChatMessage } from '../types'
 
 const initialMessage: ChatMessage = {
@@ -59,6 +60,17 @@ export const ChatBot = () => {
       const payload = (await response.json()) as { reply?: string }
       const reply = payload.reply?.trim() ? payload.reply : venueAssistantFallback(question)
 
+      trackGoogleEvent('chat_query_resolved', {
+        source: payload.reply?.trim() ? 'gemini' : 'fallback'
+      })
+
+      void logGoogleAuditRecord('chat_events', {
+        eventType: 'chat_query_resolved',
+        source: payload.reply?.trim() ? 'gemini' : 'fallback',
+        question,
+        responseLength: reply.length
+      })
+
       setMessages((prev) => [
         ...prev,
         {
@@ -69,6 +81,15 @@ export const ChatBot = () => {
         }
       ])
     } catch {
+      trackGoogleEvent('chat_query_resolved', {
+        source: 'fallback_error'
+      })
+
+      void logGoogleAuditRecord('chat_events', {
+        eventType: 'chat_query_fallback_error',
+        question
+      })
+
       setMessages((prev) => [
         ...prev,
         {

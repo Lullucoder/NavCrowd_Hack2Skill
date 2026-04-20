@@ -11,6 +11,7 @@ import foodRoutes from './routes/food.js'
 import googleRoutes from './routes/google.js'
 import mlRoutes from './routes/ml.js'
 import navigationRoutes from './routes/navigation.js'
+import notificationsRoutes from './routes/notifications.js'
 import parkingRoutes from './routes/parking.js'
 import queueRoutes from './routes/queue.js'
 import { toHttpStatus } from './utils/validation.js'
@@ -83,6 +84,7 @@ app.use('/api/parking', parkingRoutes)
 app.use('/api/ml', aiLimiter, mlRoutes)
 app.use('/api/navigation', navigationRoutes)
 app.use('/api/google', googleRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 app.use((error, req, res, _next) => {
   const statusCode = toHttpStatus(error, 500)

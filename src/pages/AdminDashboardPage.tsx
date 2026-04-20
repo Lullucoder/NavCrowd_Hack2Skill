@@ -3,7 +3,30 @@ import { AlertBanner } from '../components/AlertBanner'
 import { HeatmapCanvas } from '../components/HeatmapCanvas'
 import { StatsCard } from '../components/StatsCard'
 import { alertSeed, initialHeatZones, queueStallsSeed, tickHeatZones } from '../data/mockData'
+import {
+  callGoogleOpsFunction,
+  getGoogleClientServiceSnapshot,
+  initializeGoogleClientServices,
+  refreshGoogleRemoteConfig,
+  requestGooglePushToken,
+  trackGoogleEvent
+} from '../services/googleServices'
 import type { AlertItem } from '../types'
+
+const isAlertItem = (value: unknown): value is AlertItem => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const alert = value as Record<string, unknown>
+  return (
+    typeof alert.id === 'string' &&
+    typeof alert.title === 'string' &&
+    typeof alert.message === 'string' &&
+    typeof alert.severity === 'string' &&
+    typeof alert.createdAt === 'string'
+  )
+}
 
 interface GoogleStatusResponse {
   generatedAt: string
@@ -12,30 +35,35 @@ interface GoogleStatusResponse {
     cloudRunRevision: string
     regionHint: string
   }
-  services: {
-    geminiApi: {
-      status: 'configured' | 'fallback'
-      model: string
-      purpose: string
-    }
-    firebaseHosting: {
+  services: Record<
+    string,
+    {
       status: 'configured' | 'fallback'
       purpose: string
+      detail?: string
+      model?: string
+      serviceId?: string
     }
-    cloudRun: {
-      status: 'configured' | 'fallback'
-      serviceId: string
-      purpose: string
-    }
-  }
+  >
 }
+
+const toServiceLabel = (key: string) =>
+  key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
 
 export const AdminDashboardPage = () => {
   const [zones, setZones] = useState(initialHeatZones)
   const [alerts, setAlerts] = useState<AlertItem[]>(alertSeed)
   const [googleStatus, setGoogleStatus] = useState<GoogleStatusResponse | null>(null)
+  const [clientGoogleStatus, setClientGoogleStatus] = useState(getGoogleClientServiceSnapshot())
   const [googleStatusError, setGoogleStatusError] = useState<string | null>(null)
   const [isGoogleStatusLoading, setIsGoogleStatusLoading] = useState(false)
+  const [isBroadcasting, setIsBroadcasting] = useState(false)
+  const [pushStatusMessage, setPushStatusMessage] = useState<string | null>(null)
+  const [remoteConfigMessage, setRemoteConfigMessage] = useState<string | null>(null)
+  const [functionsMessage, setFunctionsMessage] = useState<string | null>(null)
 
   const attendance = useMemo(() => zones.reduce((sum, zone) => sum + zone.occupancy, 0), [zones])
   const averageWait = useMemo(
@@ -50,6 +78,11 @@ export const AdminDashboardPage = () => {
 
     return Object.values(googleStatus.services).filter((service) => service.status === 'configured').length
   }, [googleStatus])
+
+  const configuredClientServices = useMemo(
+    () => Object.values(clientGoogleStatus.services).filter((service) => service.status === 'configured').length,
+    [clientGoogleStatus]
+  )
 
   const fetchGoogleStatus = async () => {
     setIsGoogleStatusLoading(true)
@@ -74,17 +107,123 @@ export const AdminDashboardPage = () => {
     void fetchGoogleStatus()
   }, [])
 
-  const issueBroadcast = () => {
-    setAlerts((current) => [
-      {
-        id: crypto.randomUUID(),
-        title: 'Ops Advisory',
-        message: 'Deploy two staff members to Concourse C to reduce queue pressure.',
-        severity: 'warning',
-        createdAt: new Date().toISOString()
-      },
-      ...current
-    ])
+  useEffect(() => {
+    void (async () => {
+      await initializeGoogleClientServices()
+      setClientGoogleStatus(getGoogleClientServiceSnapshot())
+    })()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const syncAlerts = async () => {
+      try {
+        const response = await fetch('/api/alerts')
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as { alerts?: unknown }
+        const syncedAlerts = Array.isArray(payload.alerts) ? payload.alerts.filter(isAlertItem) : []
+
+        if (!cancelled && syncedAlerts.length) {
+          setAlerts(syncedAlerts)
+        }
+      } catch {
+        // Keep current alerts when backend sync is unavailable.
+      }
+    }
+
+    void syncAlerts()
+    const timerId = window.setInterval(() => {
+      void syncAlerts()
+    }, 10000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timerId)
+    }
+  }, [])
+
+  const issueBroadcast = async () => {
+    if (isBroadcasting) {
+      return
+    }
+
+    setIsBroadcasting(true)
+
+    const fallbackAlert: AlertItem = {
+      id: crypto.randomUUID(),
+      title: 'Ops Advisory',
+      message: 'Deploy two staff members to Concourse C to reduce queue pressure.',
+      severity: 'warning',
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const response = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: fallbackAlert.title,
+          message: fallbackAlert.message,
+          severity: fallbackAlert.severity
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Unable to broadcast advisory')
+      }
+
+      const persistedAlert = (await response.json()) as AlertItem
+      setAlerts((current) => [persistedAlert, ...current.filter((alert) => alert.id !== persistedAlert.id)])
+    } catch {
+      setAlerts((current) => [fallbackAlert, ...current])
+    } finally {
+      setIsBroadcasting(false)
+    }
+  }
+
+  const handleEnablePush = async () => {
+    const result = await requestGooglePushToken()
+    setPushStatusMessage(result.detail)
+    trackGoogleEvent('google_push_token_attempt', {
+      success: result.ok,
+      tokenReceived: Boolean(result.token)
+    })
+    setClientGoogleStatus(getGoogleClientServiceSnapshot())
+  }
+
+  const handleRefreshRemoteConfig = async () => {
+    const result = await refreshGoogleRemoteConfig()
+    setRemoteConfigMessage(result.detail)
+    trackGoogleEvent('google_remote_config_refresh', {
+      success: result.ok
+    })
+    setClientGoogleStatus(getGoogleClientServiceSnapshot())
+  }
+
+  const handleCallablePing = async () => {
+    const result = await callGoogleOpsFunction({
+      sourcePage: 'admin-dashboard'
+    })
+
+    setFunctionsMessage(result.detail)
+    trackGoogleEvent('google_callable_function_ping', {
+      success: result.ok
+    })
+    setClientGoogleStatus(getGoogleClientServiceSnapshot())
+  }
+
+  const latestAlert = alerts[0] ?? {
+    id: 'fallback-alert',
+    title: 'No Alerts Yet',
+    message: 'Live advisory feed is currently clear.',
+    severity: 'info' as const,
+    createdAt: new Date().toISOString()
   }
 
   return (
@@ -106,7 +245,7 @@ export const AdminDashboardPage = () => {
         <div className="vf-panel-head">
           <div>
             <h3>Google Services Health</h3>
-            <p>Live integration checks for Gemini, Firebase Hosting, and Cloud Run.</p>
+            <p>Live integration checks for Gemini, Firebase, Cloud Run, Maps readiness, and client SDK services.</p>
           </div>
           <button className="btn btn-secondary" onClick={() => void fetchGoogleStatus()} disabled={isGoogleStatusLoading}>
             {isGoogleStatusLoading ? 'Refreshing...' : 'Refresh Status'}
@@ -116,36 +255,58 @@ export const AdminDashboardPage = () => {
         {googleStatus ? (
           <>
             <div className="vf-google-status-grid">
-              <article className="vf-google-status-card">
-                <p className="vf-muted">Gemini API</p>
-                <strong>{googleStatus.services.geminiApi.status}</strong>
-                <p className="vf-muted">{googleStatus.services.geminiApi.model}</p>
-              </article>
-              <article className="vf-google-status-card">
-                <p className="vf-muted">Firebase Hosting</p>
-                <strong>{googleStatus.services.firebaseHosting.status}</strong>
-                <p className="vf-muted">Public SPA delivery + rewrites</p>
-              </article>
-              <article className="vf-google-status-card">
-                <p className="vf-muted">Cloud Run</p>
-                <strong>{googleStatus.services.cloudRun.status}</strong>
-                <p className="vf-muted">Service: {googleStatus.services.cloudRun.serviceId}</p>
-              </article>
+              {Object.entries(googleStatus.services).map(([key, service]) => (
+                <article key={key} className="vf-google-status-card">
+                  <p className="vf-muted">{toServiceLabel(key)}</p>
+                  <strong>{service.status}</strong>
+                  <p className="vf-muted">{service.detail || service.model || service.serviceId || service.purpose}</p>
+                </article>
+              ))}
             </div>
 
             <p className="vf-inline-note">
-              {configuredServices}/3 services configured. Runtime target: {googleStatus.runtime.cloudRunService} ({googleStatus.runtime.regionHint})
+              Backend services configured: {configuredServices}/{Object.keys(googleStatus.services).length}. Runtime target: {googleStatus.runtime.cloudRunService} ({googleStatus.runtime.regionHint})
             </p>
           </>
         ) : null}
+
+        <div className="vf-google-status-grid">
+          {Object.entries(clientGoogleStatus.services).map(([key, service]) => (
+            <article key={`client-${key}`} className="vf-google-status-card">
+              <p className="vf-muted">Client {toServiceLabel(key)}</p>
+              <strong>{service.status}</strong>
+              <p className="vf-muted">{service.detail || service.purpose}</p>
+            </article>
+          ))}
+        </div>
+
+        <p className="vf-inline-note">
+          Client services configured: {configuredClientServices}/{Object.keys(clientGoogleStatus.services).length}.
+        </p>
+
+        <div className="vf-admin-actions">
+          <button className="btn btn-secondary" onClick={() => void handleEnablePush()}>
+            Enable Push Token (FCM)
+          </button>
+          <button className="btn btn-secondary" onClick={() => void handleRefreshRemoteConfig()}>
+            Refresh Remote Config
+          </button>
+          <button className="btn btn-secondary" onClick={() => void handleCallablePing()}>
+            Ping Cloud Function
+          </button>
+        </div>
+
+        {pushStatusMessage ? <p className="vf-muted">Push: {pushStatusMessage}</p> : null}
+        {remoteConfigMessage ? <p className="vf-muted">Remote Config: {remoteConfigMessage}</p> : null}
+        {functionsMessage ? <p className="vf-muted">Cloud Function: {functionsMessage}</p> : null}
 
         {googleStatusError ? <p className="vf-muted">{googleStatusError}</p> : null}
       </section>
 
       <div className="vf-section-space" />
       <section className="vf-admin-actions">
-        <button className="btn btn-primary" onClick={issueBroadcast}>
-          Broadcast Advisory
+        <button className="btn btn-primary" onClick={() => void issueBroadcast()} disabled={isBroadcasting}>
+          {isBroadcasting ? 'Broadcasting...' : 'Broadcast Advisory'}
         </button>
         <button className="btn btn-secondary" onClick={() => setZones((current) => tickHeatZones(current))}>
           Recalculate Heatmap
@@ -153,7 +314,7 @@ export const AdminDashboardPage = () => {
       </section>
 
       <div className="vf-section-space" />
-      <AlertBanner title={alerts[0].title} message={alerts[0].message} severity={alerts[0].severity} />
+      <AlertBanner title={latestAlert.title} message={latestAlert.message} severity={latestAlert.severity} />
 
       <div className="vf-section-space" />
       <HeatmapCanvas zones={zones} onRefresh={() => setZones((current) => tickHeatZones(current))} />
