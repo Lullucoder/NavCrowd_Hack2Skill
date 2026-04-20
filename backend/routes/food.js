@@ -1,5 +1,6 @@
 import express from 'express'
 import { listMenu, listOrders, placeOrder } from '../mock/menuData.js'
+import { parseItemIds, toHttpStatus } from '../utils/validation.js'
 
 const router = express.Router()
 
@@ -9,11 +10,11 @@ router.get('/menu', (_req, res) => {
 
 router.post('/order', (req, res) => {
   try {
-    const { itemIds } = req.body
-    const order = placeOrder({ itemIds: Array.isArray(itemIds) ? itemIds : [] })
+    const itemIds = parseItemIds(req.body?.itemIds, { maxItems: 10 })
+    const order = placeOrder({ itemIds })
     res.status(201).json(order)
   } catch (error) {
-    res.status(400).json({
+    res.status(toHttpStatus(error, 400)).json({
       error: error instanceof Error ? error.message : 'Unable to place order'
     })
   }

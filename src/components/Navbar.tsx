@@ -10,6 +10,7 @@ export const Navbar = ({ userName, onLogout }: NavbarProps) => {
   const [now, setNow] = useState(() => new Date())
   const [showNotifications, setShowNotifications] = useState(false)
   const notificationPanelRef = useRef<HTMLDivElement | null>(null)
+  const notificationsPanelId = 'vf-navbar-notifications-panel'
 
   const notificationItems = [
     'North concourse is trending busy. Suggested reroute active.',
@@ -62,6 +63,8 @@ export const Navbar = ({ userName, onLogout }: NavbarProps) => {
             className="btn btn-ghost vf-icon-btn hover-lift"
             aria-label="Notifications"
             aria-expanded={showNotifications}
+            aria-haspopup="dialog"
+            aria-controls={notificationsPanelId}
             onClick={() => setShowNotifications((current) => !current)}
           >
             <Bell size={18} />
@@ -69,7 +72,7 @@ export const Navbar = ({ userName, onLogout }: NavbarProps) => {
           </button>
 
           {showNotifications ? (
-            <div className="vf-notification-panel">
+            <div id={notificationsPanelId} className="vf-notification-panel" role="dialog" aria-label="Live alerts">
               <p className="vf-notification-title">Live alerts</p>
               <div className="vf-notification-list">
                 {notificationItems.map((item) => (

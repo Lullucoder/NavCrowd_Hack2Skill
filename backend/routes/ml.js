@@ -4,8 +4,23 @@ import { buildHeatmapSnapshot } from '../mock/crowdSimulator.js'
 import { listParkingZones } from '../mock/parkingData.js'
 import { listQueueStatus } from '../mock/queueSimulator.js'
 import { generateMlInsights } from '../services/mlInsightsService.js'
+import { optionalBoolean, optionalEnum, optionalText } from '../utils/validation.js'
 
 const router = express.Router()
+
+const fetchWithTimeout = async (url, options, timeoutMs = 4500) => {
+  const abortController = new AbortController()
+  const timeoutId = setTimeout(() => abortController.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: abortController.signal
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
 
 const summarizeWithGemini = async (insights) => {
   const apiKey = process.env.GEMINI_API_KEY
@@ -16,7 +31,7 @@ const summarizeWithGemini = async (insights) => {
 
   const prompt = `You are VenueFlow AI operations assistant. Summarize this JSON into 3 short recommendations for an attendee:\n${JSON.stringify(insights)}`
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
@@ -35,7 +50,8 @@ const summarizeWithGemini = async (insights) => {
           maxOutputTokens: 200
         }
       })
-    }
+    },
+    4800
   )
 
   if (!response.ok) {
@@ -49,10 +65,10 @@ const summarizeWithGemini = async (insights) => {
 
 router.post('/insights', async (req, res) => {
   const context = {
-    seat: req.body?.seat || 'B-127',
-    intent: req.body?.intent || 'quick',
-    mobilityNeed: Boolean(req.body?.mobilityNeed),
-    firstVisit: Boolean(req.body?.firstVisit)
+    seat: optionalText(req.body?.seat, { fallback: 'B-127', maxLength: 12 }).toUpperCase(),
+    intent: optionalEnum(req.body?.intent, ['quick', 'merch', 'comfort'], 'quick'),
+    mobilityNeed: optionalBoolean(req.body?.mobilityNeed),
+    firstVisit: optionalBoolean(req.body?.firstVisit)
   }
 
   const crowdSnapshot = buildHeatmapSnapshot()

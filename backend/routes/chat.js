@@ -1,4 +1,5 @@
 import express from 'express'
+import { requireText } from '../utils/validation.js'
 
 const router = express.Router()
 
@@ -25,6 +26,20 @@ const fallbackReply = (question) => {
   return 'I can help with gates, queues, food stalls, parking, and safety alerts in NexGen Arena.'
 }
 
+const fetchWithTimeout = async (url, options, timeoutMs = 4500) => {
+  const abortController = new AbortController()
+  const timeoutId = setTimeout(() => abortController.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: abortController.signal
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 const generateWithGemini = async (message) => {
   const apiKey = process.env.GEMINI_API_KEY
 
@@ -32,7 +47,7 @@ const generateWithGemini = async (message) => {
     return fallbackReply(message)
   }
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
@@ -54,7 +69,8 @@ const generateWithGemini = async (message) => {
           maxOutputTokens: 250
         }
       })
-    }
+    },
+    5000
   )
 
   if (!response.ok) {
@@ -72,12 +88,7 @@ const generateWithGemini = async (message) => {
 }
 
 router.post('/', async (req, res) => {
-  const message = req.body?.message
-
-  if (typeof message !== 'string' || !message.trim()) {
-    res.status(400).json({ error: 'Message is required' })
-    return
-  }
+  const message = requireText(req.body?.message, 'message', { maxLength: 360 })
 
   try {
     const reply = await generateWithGemini(message)

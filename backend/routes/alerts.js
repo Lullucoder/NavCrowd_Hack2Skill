@@ -1,4 +1,5 @@
 import express from 'express'
+import { optionalEnum, requireText } from '../utils/validation.js'
 
 const router = express.Router()
 
@@ -24,14 +25,9 @@ router.get('/', (_req, res) => {
 })
 
 router.post('/', (req, res) => {
-  const title = req.body?.title
-  const message = req.body?.message
-  const severity = req.body?.severity ?? 'warning'
-
-  if (!title || !message) {
-    res.status(400).json({ error: 'title and message are required' })
-    return
-  }
+  const title = requireText(req.body?.title, 'title', { maxLength: 90 })
+  const message = requireText(req.body?.message, 'message', { maxLength: 320 })
+  const severity = optionalEnum(req.body?.severity, ['info', 'warning', 'critical'], 'warning')
 
   const alert = {
     id: crypto.randomUUID(),
@@ -42,6 +38,11 @@ router.post('/', (req, res) => {
   }
 
   alerts.unshift(alert)
+
+  if (alerts.length > 80) {
+    alerts.splice(80)
+  }
+
   res.status(201).json(alert)
 })
 

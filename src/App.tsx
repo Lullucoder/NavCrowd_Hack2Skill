@@ -20,10 +20,13 @@ interface AppShellProps {
 
 const AppShell = ({ userName, onLogout }: AppShellProps) => (
   <div className="vf-shell">
+    <a className="vf-skip-link" href="#main-content">
+      Skip to main content
+    </a>
     <Sidebar />
     <div className="vf-shell-main">
       <Navbar userName={userName} onLogout={onLogout} />
-      <main className="vf-content">
+      <main id="main-content" className="vf-content" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

@@ -189,7 +189,7 @@ export const FoodOrderPage = () => {
         <aside className="glass-card vf-cart-panel vf-food-checkout-panel">
           <div className="vf-food-checkout-head">
             <h3>Checkout ({totalItems})</h3>
-            <span className={orderState === 'ready' ? 'badge badge-green' : orderState === 'processing' ? 'badge badge-amber' : 'badge badge-blue'}>
+            <span aria-live="polite" className={orderState === 'ready' ? 'badge badge-green' : orderState === 'processing' ? 'badge badge-amber' : 'badge badge-blue'}>
               {statusLabel}
             </span>
           </div>
@@ -203,11 +203,11 @@ export const FoodOrderPage = () => {
                     <p className="vf-muted">Rs {line.item.price} each</p>
                   </div>
                   <div className="vf-food-qty-controls">
-                    <button className="btn btn-secondary" onClick={() => updateQuantity(line.item.id, -1)}>
+                    <button className="btn btn-secondary" aria-label={`Reduce quantity of ${line.item.name}`} onClick={() => updateQuantity(line.item.id, -1)}>
                       -
                     </button>
                     <strong>{line.quantity}</strong>
-                    <button className="btn btn-secondary" onClick={() => updateQuantity(line.item.id, 1)}>
+                    <button className="btn btn-secondary" aria-label={`Increase quantity of ${line.item.name}`} onClick={() => updateQuantity(line.item.id, 1)}>
                       +
                     </button>
                   </div>
@@ -268,7 +268,7 @@ export const FoodOrderPage = () => {
           </button>
 
           {activeOrder ? (
-            <section className="vf-food-token-card">
+            <section className="vf-food-token-card" role="status" aria-live="polite">
               <p className="badge badge-green">Token Generated</p>
               <h4>Token #{activeOrder.tokenNumber}</h4>
               <p>

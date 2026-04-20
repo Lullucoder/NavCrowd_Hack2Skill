@@ -3,23 +3,26 @@ import { buildHeatmapSnapshot } from '../mock/crowdSimulator.js'
 import { listParkingZones } from '../mock/parkingData.js'
 import { listQueueStatus } from '../mock/queueSimulator.js'
 import { generateNavigationPlan } from '../services/navigationRecommendationService.js'
+import { createTTLCache } from '../utils/cache.js'
+import { optionalBoolean, optionalEnum, optionalText } from '../utils/validation.js'
 
 const router = express.Router()
-
-const toBoolean = (value) => {
-  if (typeof value !== 'string') {
-    return false
-  }
-
-  const normalized = value.trim().toLowerCase()
-  return normalized === '1' || normalized === 'true' || normalized === 'yes'
-}
+const navigationCache = createTTLCache({ ttlMs: 2500, maxEntries: 100 })
 
 router.get('/assist', (req, res) => {
-  const seat = req.query.seat?.toString() || 'B-127'
-  const phase = req.query.phase?.toString() || 'entry'
-  const intent = req.query.intent?.toString() || 'quick'
-  const mobilityNeed = toBoolean(req.query.mobilityNeed?.toString())
+  const seat = optionalText(req.query.seat?.toString(), { fallback: 'B-127', maxLength: 12 }).toUpperCase()
+  const phase = optionalEnum(req.query.phase?.toString(), ['entry', 'halftime', 'exit'], 'entry')
+  const intent = optionalEnum(req.query.intent?.toString(), ['quick', 'comfort', 'merch'], 'quick')
+  const mobilityNeed = optionalBoolean(req.query.mobilityNeed?.toString())
+
+  const cacheKey = `${seat}|${phase}|${intent}|${mobilityNeed ? '1' : '0'}`
+  const cached = navigationCache.get(cacheKey)
+
+  if (cached) {
+    res.setHeader('x-cache', 'HIT')
+    res.json(cached)
+    return
+  }
 
   const crowdSnapshot = buildHeatmapSnapshot()
   const queueStatus = listQueueStatus()
@@ -35,6 +38,8 @@ router.get('/assist', (req, res) => {
     parkingZones
   })
 
+  navigationCache.set(cacheKey, recommendation)
+  res.setHeader('x-cache', 'MISS')
   res.json(recommendation)
 })
 

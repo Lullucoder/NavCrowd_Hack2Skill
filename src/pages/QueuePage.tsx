@@ -120,7 +120,7 @@ export const QueuePage = () => {
       </header>
 
       {joinedStall && queuePosition && ticket ? (
-        <section className="vf-queue-ticket glass-card">
+        <section className="vf-queue-ticket glass-card" role="status" aria-live="polite">
           <div className="vf-queue-ticket-top">
             <div>
               <p className="badge badge-green">Active Queue Ticket</p>
@@ -138,12 +138,12 @@ export const QueuePage = () => {
                 Stall zone: <strong>{joinedStall.zone}</strong>
               </p>
               <p className="vf-queue-token-pill">Token: {ticket.tokenCode}</p>
-              <button className="btn btn-secondary" onClick={() => void handleCopyToken()}>
+              <button className="btn btn-secondary" aria-label="Copy queue token" onClick={() => void handleCopyToken()}>
                 {copyLabel}
               </button>
             </div>
 
-            <div className="vf-queue-qr-card">
+            <div className="vf-queue-qr-card" aria-busy={!qrCodeDataUrl}>
               {qrCodeDataUrl ? (
                 <img className="vf-queue-qr-image" src={qrCodeDataUrl} alt={`Queue token QR for ${joinedStall.name}`} />
               ) : (

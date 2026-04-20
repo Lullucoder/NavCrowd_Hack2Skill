@@ -929,6 +929,27 @@
   gap: var(--space-sm);
 }
 
+.vf-google-services-panel {
+  padding: var(--space-lg);
+  display: grid;
+  gap: var(--space-md);
+}
+
+.vf-google-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.vf-google-status-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(148, 163, 184, 0.08);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
 .vf-ai-panel {
   padding: var(--space-lg);
   display: grid;
@@ -1033,6 +1054,10 @@
 
   .vf-ai-form-row,
   .vf-ai-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vf-google-status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1142,6 +1167,10 @@
   .vf-ai-form-row,
   .vf-ai-kpis,
   .vf-ai-reco-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vf-google-status-grid {
     grid-template-columns: 1fr;
   }
 }
